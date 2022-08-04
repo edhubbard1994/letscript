@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::str::Chars;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub enum TokenType {
     Assign,
     Equals,
@@ -60,11 +60,13 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
     let gte_regex = Regex::new(r">=\z").unwrap();
     let lte_regex = Regex::new(r"<=\z").unwrap();
     let not_regex = Regex::new(r"not\z").unwrap();
+    let if_regex = Regex::new(r"if\z").unwrap();
+    let else_regex = Regex::new(r"else\z").unwrap();
     let for_regex = Regex::new(r"for\z").unwrap();
     let while_regex = Regex::new(r"while\z").unwrap();
     let each_regex = Regex::new(r"each\z").unwrap();
     let loop_regex = Regex::new(r"loop\z").unwrap();
-    let function_regex = Regex::new(r"define\z").unwrap();
+    let function_regex = Regex::new(r"function\z").unwrap();
 
     let mut text_itr = program_string.chars();
     let mut current_char;
@@ -88,11 +90,10 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
                 current_char = Some(token_tuple.1);
             }
             'i' => {
-                let token_tuple = generate_regex_token(
+                let token_tuple = generate_keyword_regex_token(
                     &mut text_itr,
-                    &is_regex,
+                    &[(&is_regex, TokenType::Is), (&if_regex, TokenType::If)],
                     &mut current_char.unwrap(),
-                    TokenType::Is,
                 );
                 token = token_tuple.0;
                 current_char = Some(token_tuple.1);
@@ -127,32 +128,26 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
                 token = token_tuple.0;
                 current_char = Some(token_tuple.1);
             }
-            'd' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &function_regex,
-                    &mut current_char.unwrap(),
-                    TokenType::Function,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
             'f' => {
-                let token_tuple = generate_regex_token(
+                let token_tuple = generate_keyword_regex_token(
                     &mut text_itr,
-                    &for_regex,
+                    &[
+                        (&for_regex, TokenType::For),
+                        (&function_regex, TokenType::Function),
+                    ],
                     &mut current_char.unwrap(),
-                    TokenType::For,
                 );
                 token = token_tuple.0;
                 current_char = Some(token_tuple.1);
             }
             'e' => {
-                let token_tuple = generate_regex_token(
+                let token_tuple = generate_keyword_regex_token(
                     &mut text_itr,
-                    &each_regex,
+                    &[
+                        (&each_regex, TokenType::Each),
+                        (&else_regex, TokenType::Else),
+                    ],
                     &mut current_char.unwrap(),
-                    TokenType::Each,
                 );
                 token = token_tuple.0;
                 current_char = Some(token_tuple.1);
@@ -348,6 +343,35 @@ fn generate_regex_token(
     return (generate_literal_token(acc), *current);
 }
 
+fn generate_keyword_regex_token(
+    stream: &mut Chars,
+    types: &[(&Regex, TokenType)],
+    current: &mut char,
+) -> (Option<Token>, char) {
+    let mut acc = String::from("");
+
+    while *current != ' ' && current.is_alphanumeric() {
+        acc.push(current.clone());
+        println!("loop char regex = {}", current.clone());
+        *current = stream.next().unwrap();
+    }
+    println!("regex text: {}", acc.clone().as_str());
+
+    for (regex, tok_type) in types {
+        if regex.is_match(acc.as_str()) {
+            return (
+                Some(Token {
+                    tok_type: *tok_type,
+                    tok_value: None,
+                }),
+                *current,
+            );
+        }
+    }
+
+    return (generate_literal_token(acc), *current);
+}
+
 fn generate_operator_regex_token(
     stream: &mut Chars,
     regex: &Regex,
@@ -455,13 +479,13 @@ pub fn test_tokenizer_combinator() {
 
 #[test]
 pub fn test_tokenizer_boolean_expression() {
-    let mut input = String::from("3 < 5 or 7 is 2 and 5>=4 or 0.77<= y\n");
+    let mut input = String::from("3 <5 or 7 = 2 and 5>=4 or 0.77<= y\n");
     let tokens = tokenize(&mut input);
     tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
 
     assert_eq!(matches!(tokens[0].tok_type, TokenType::Literal), true);
     assert_eq!(matches!(tokens[3].tok_type, TokenType::Or), true);
-    assert_eq!(matches!(tokens[5].tok_type, TokenType::Is), true);
+    assert_eq!(matches!(tokens[5].tok_type, TokenType::Equals), true);
     assert_eq!(matches!(tokens[7].tok_type, TokenType::And), true);
     assert_eq!(matches!(tokens[9].tok_type, TokenType::Gte), true);
     assert_eq!(tokens.len(), 16);
@@ -485,6 +509,19 @@ pub fn test_tokenizer_bracket() {
 }
 
 #[test]
+pub fn test_tokenizer_conditionals() {
+    let mut input = String::from("if(x in y){}\nelse if(x not = 3){}\nelse{}\n");
+    let tokens = tokenize(&mut input);
+    tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
+    assert_eq!(matches!(tokens[0].tok_type, TokenType::If), true);
+    assert_eq!(matches!(tokens[9].tok_type, TokenType::Else), true);
+    assert_eq!(matches!(tokens[10].tok_type, TokenType::If), true);
+    assert_eq!(matches!(tokens[20].tok_type, TokenType::Else), true);
+    assert_eq!(matches!(tokens[23].tok_type, TokenType::NewLine), true);
+    assert_eq!(tokens.len(), 24);
+}
+
+#[test]
 pub fn test_tokenizer_loops() {
     let mut input = String::from("for each(var x in y) {} loop while (x not = 3)\n");
     let tokens = tokenize(&mut input);
@@ -499,7 +536,7 @@ pub fn test_tokenizer_loops() {
 
 #[test]
 pub fn test_tokenizer_functions() {
-    let mut input = String::from("define(x, y, zee )\n{loop while (x not = 3){} }\n");
+    let mut input = String::from("function(x, y, zee )\n{loop while (x not = 3){} }\n");
     let tokens = tokenize(&mut input);
     tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
     assert_eq!(matches!(tokens[0].tok_type, TokenType::Function), true);
