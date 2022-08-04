@@ -499,13 +499,13 @@ pub fn test_tokenizer_loops() {
 
 #[test]
 pub fn test_tokenizer_functions() {
-    let mut input = String::from("define(x, y, zee ){loop while (x not = 3){} }\n");
+    let mut input = String::from("define(x, y, zee )\n{loop while (x not = 3){} }\n");
     let tokens = tokenize(&mut input);
     tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
     assert_eq!(matches!(tokens[0].tok_type, TokenType::Function), true);
     assert_eq!(matches!(tokens[1].tok_type, TokenType::OpenParen), true);
     assert_eq!(matches!(tokens[5].tok_type, TokenType::Comma), true);
     assert_eq!(matches!(tokens[6].tok_type, TokenType::Literal), true);
-    assert_eq!(matches!(tokens[9].tok_type, TokenType::Loop), true);
-    assert_eq!(tokens.len(), 21);
+    assert_eq!(matches!(tokens[10].tok_type, TokenType::Loop), true);
+    assert_eq!(tokens.len(), 22);
 }
