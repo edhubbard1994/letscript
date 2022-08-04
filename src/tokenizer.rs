@@ -64,6 +64,7 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
     let while_regex = Regex::new(r"while\z").unwrap();
     let each_regex = Regex::new(r"each\z").unwrap();
     let loop_regex = Regex::new(r"loop\z").unwrap();
+    let function_regex = Regex::new(r"define\z").unwrap();
 
     let mut text_itr = program_string.chars();
     let mut current_char;
@@ -122,6 +123,16 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
                     &not_regex,
                     &mut current_char.unwrap(),
                     TokenType::Not,
+                );
+                token = token_tuple.0;
+                current_char = Some(token_tuple.1);
+            }
+            'd' => {
+                let token_tuple = generate_regex_token(
+                    &mut text_itr,
+                    &function_regex,
+                    &mut current_char.unwrap(),
+                    TokenType::Function,
                 );
                 token = token_tuple.0;
                 current_char = Some(token_tuple.1);
@@ -488,13 +499,13 @@ pub fn test_tokenizer_loops() {
 
 #[test]
 pub fn test_tokenizer_functions() {
-    let mut input = String::from("for each(var x in y) {} loop while (x not = 3)\n");
+    let mut input = String::from("define(x, y, zee ){loop while (x not = 3){} }\n");
     let tokens = tokenize(&mut input);
     tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
-    assert_eq!(matches!(tokens[0].tok_type, TokenType::For), true);
-    assert_eq!(matches!(tokens[1].tok_type, TokenType::Each), true);
-    assert_eq!(matches!(tokens[2].tok_type, TokenType::OpenParen), true);
-    assert_eq!(matches!(tokens[7].tok_type, TokenType::CloseParen), true);
-    assert_eq!(matches!(tokens[9].tok_type, TokenType::CloseBrace), true);
-    assert_eq!(tokens.len(), 19);
+    assert_eq!(matches!(tokens[0].tok_type, TokenType::Function), true);
+    assert_eq!(matches!(tokens[1].tok_type, TokenType::OpenParen), true);
+    assert_eq!(matches!(tokens[5].tok_type, TokenType::Comma), true);
+    assert_eq!(matches!(tokens[6].tok_type, TokenType::Literal), true);
+    assert_eq!(matches!(tokens[9].tok_type, TokenType::Loop), true);
+    assert_eq!(tokens.len(), 21);
 }
