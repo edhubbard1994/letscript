@@ -1,16 +1,12 @@
-use crate::ast::LSValue;
 use crate::token::Token;
 use crate::token::TokenType;
-use crate::token::TokenValue;
-use std::ptr::null;
+
 use std::slice::Iter;
 use std::vec;
 
-use regex::Regex;
-
-pub fn parse(tokens: Vec<Token>) {
-    let itr = tokens.iter();
-    let token = itr.next();
+pub fn parse(tokens: &mut Vec<Token>) {
+    let mut itr = tokens.iter();
+    let mut token = itr.next();
     while token.is_some() {
         match token.unwrap().tok_type {
             TokenType::Literal => {}
@@ -54,9 +50,9 @@ pub fn parse(tokens: Vec<Token>) {
 }
 
 pub fn collect_expression_tokens<'a>(
-    current_token: &'a mut Token,
+    current_token: &'a Token,
     tokens: &'a mut Iter<'a, Token>,
-) {
+) -> Vec<Token> {
     let possible_tokens = vec![
         TokenType::OpenParen,
         TokenType::CloseParen,
@@ -64,10 +60,17 @@ pub fn collect_expression_tokens<'a>(
         TokenType::Plus,
         TokenType::Minus,
     ];
-    let acc: Vec<Token> = Vec::new();
-    while possible_tokens.contains(&current_token.tok_type) {
-        acc.push(current_token.clone());
-        current_token = &mut tokens.next().unwrap();
+    let t = tokens;
+    let mut current = t.next().unwrap();
+    let mut acc: Vec<Token> = Vec::new();
+    while possible_tokens.contains(&current.tok_type) {
+        let val = current.tok_value.clone();
+        if val.is_some() {
+            println!("{:?}", val.unwrap().s_val.unwrap());
+        }
+
+        acc.push(current.clone());
+        current = t.next().unwrap();
     }
-    acc;
+    return acc;
 }

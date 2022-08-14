@@ -1,6 +1,5 @@
 use crate::token::Token;
 use crate::token::TokenType;
-use std::LinkedList;
 
 pub struct LSValue<T> {
     value: T,
