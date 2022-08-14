@@ -1,54 +1,8 @@
+use crate::token::Token;
+use crate::token::TokenType;
+use crate::token::TokenValue;
 use regex::Regex;
 use std::str::Chars;
-
-#[derive(Clone, Debug, Copy)]
-pub enum TokenType {
-    Assign,
-    Equals,
-    Plus,
-    Minus,
-    Mult,
-    Div,
-    Not,
-    And,
-    Or,
-    Is,
-    GreaterThan,
-    LessThan,
-    Gte,
-    Lte,
-    Literal,
-    Bool,
-    Function,
-    Quote,
-    If,
-    Else,
-    While,
-    For,
-    Loop,
-    Each,
-    Period,
-    Colon,
-    Comma,
-    Object,
-    OpenBrace,
-    CloseBrace,
-    OpenBracket,
-    CloseBracet,
-    OpenParen,
-    CloseParen,
-    NewLine,
-}
-#[derive(Clone)]
-pub struct TokenValue {
-    s_val: Option<String>,
-}
-
-#[derive(Clone)]
-pub struct Token {
-    tok_type: TokenType,
-    tok_value: Option<TokenValue>,
-}
 
 pub fn tokenize(program_string: &mut String) -> Vec<Token> {
     let mut tokens = Vec::<Token>::new();

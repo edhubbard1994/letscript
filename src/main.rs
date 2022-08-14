@@ -1,4 +1,8 @@
-pub mod tokenizer;
+mod ast;
+mod parser;
+mod test_parser;
+mod token;
+mod tokenizer;
 
 // mod tokenizer;
 // use uwl::StringStream;
