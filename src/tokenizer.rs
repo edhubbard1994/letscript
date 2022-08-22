@@ -31,7 +31,7 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
         if current_char == None {
             break;
         }
-        println!("current char in match: {}", current_char.as_ref().unwrap());
+        //println!("current char in match: {}", current_char.as_ref().unwrap());
         match current_char.unwrap() {
             'v' => {
                 let token_tuple = generate_regex_token(

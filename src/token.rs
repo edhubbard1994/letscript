@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 pub enum TokenType {
     Assign,
     Equals,
