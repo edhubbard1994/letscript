@@ -14,7 +14,7 @@ pub fn test_collect_expressions() {
 
 #[test]
 pub fn test_infix_to_postfix() {
-    let mut input = String::from("3+ 4 + (6- 5)");
+    let mut input = String::from("3+ 4 - 7 * 6/5");
     let tokens = tokenize(&mut input);
     let postfix = infix_to_postfix(tokens);
 
@@ -22,7 +22,7 @@ pub fn test_infix_to_postfix() {
         if t.tok_type == TokenType::Literal {
             println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
         } else {
-            println!("{:?}", t.tok_type);
+            println!("Token({:?})", t.tok_type);
         }
     });
     assert_eq!(1, 2);

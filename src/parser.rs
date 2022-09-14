@@ -77,46 +77,68 @@ pub fn collect_expression_tokens<'a>(
     return (current.clone(), acc);
 }
 
+pub fn precedence(tok: &Token) -> u8 {
+    return match tok.tok_type {
+        TokenType::Mult => 255,
+        TokenType::Div => 255,
+        TokenType::Plus => 254,
+        TokenType::Minus => 254,
+        _ => 0,
+    };
+}
+
 pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
-    let mut operator_stack = LinkedList::<(Token, u8)>::new();
+    let mut operator_stack = LinkedList::<Token>::new();
     let mut operand_queue = Vec::<Token>::new();
 
-    let mut last_prec: u8 = 255;
     for token in tokens {
-        let mut prec = 0;
-        let mut is_operator = true;
-        /*
-        *NOTE* OPERATOR PRECENDENCE NUMBERS:
-        Paren: 255
-        Add, Sub: 128
-
-         */
-        match token.tok_type {
-            TokenType::OpenParen => {}
-            TokenType::CloseParen => {}
-            TokenType::Plus | TokenType::Minus => prec = 128,
-            TokenType::Literal => is_operator = false,
-            _ => todo!("return error condition"),
-        }
-        if is_operator && prec < last_prec {
-            operator_stack.push_front((token, prec))
-        } else if !operator_stack.is_empty() && prec > last_prec {
-            loop {
-                if operator_stack.is_empty() {
-                    break;
-                }
-                if prec > last_prec {
-                    break;
-                }
-                let op = operator_stack.pop_front().unwrap();
-                last_prec = op.1;
-                println!("pushed token with type: {:?}", op.0.tok_type);
-                operand_queue.push(op.0);
+        // operand_queue.iter().for_each(|t| {
+        //     if t.tok_type == TokenType::Literal {
+        //         print!(" {:?} ", t.tok_value.clone().unwrap().s_val)
+        //     } else {
+        //         print!(" {:?} ", t.tok_type)
+        //     }
+        // });
+        // print!(" | ");
+        // println!("stacksize({})", operator_stack.len());
+        let is_operand = token.tok_type == TokenType::Literal;
+        if is_operand {
+            operand_queue.push(token.clone())
+        } else if token.tok_type == TokenType::OpenParen {
+            operator_stack.push_front(token.clone());
+        } else if token.tok_type == TokenType::CloseParen {
+            while operator_stack.is_empty() == false
+                && operator_stack.front().unwrap().tok_type != TokenType::OpenParen
+            {
+                operand_queue.push(operator_stack.pop_front().unwrap().clone());
             }
+            operator_stack.pop_front();
         } else {
-            operand_queue.push(token);
+            let top = operator_stack.front();
+            let prec = precedence(&token);
+            let mut stack_prec;
+            match top {
+                Some(x) => stack_prec = precedence(x),
+                None => stack_prec = 0,
+            }
+
+            while operator_stack.is_empty() == false && prec <= stack_prec {
+                let tok = operator_stack.pop_front().unwrap().clone();
+                stack_prec = precedence(&tok);
+                operand_queue.push(tok.clone());
+            }
+            operator_stack.push_front(token.clone());
         }
     }
+    while operator_stack.is_empty() == false {
+        let tok = operator_stack.pop_front().unwrap().clone();
+        operand_queue.push(tok);
+    }
+
+    // operand_queue
+    //     .iter()
+    //     .for_each(|t| println!("{:?}", t.tok_type));
+
     return operand_queue;
 }
 
