@@ -118,11 +118,18 @@ pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
             let prec = precedence(&token);
             let mut stack_prec;
             match top {
-                Some(x) => stack_prec = precedence(x),
+                Some(x) => {
+                    stack_prec = precedence(x);
+                    if prec <= stack_prec {
+                        let tok = operator_stack.pop_front().unwrap().clone();
+                        operand_queue.push(tok.clone());
+                        stack_prec = precedence(&tok);
+                    }
+                }
                 None => stack_prec = 0,
             }
 
-            while operator_stack.is_empty() == false && prec <= stack_prec {
+            while operator_stack.is_empty() == false && prec < stack_prec {
                 let tok = operator_stack.pop_front().unwrap().clone();
                 stack_prec = precedence(&tok);
                 operand_queue.push(tok.clone());

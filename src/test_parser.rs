@@ -14,7 +14,7 @@ pub fn test_collect_expressions() {
 
 #[test]
 pub fn test_infix_to_postfix() {
-    let mut input = String::from("3+ 4 - 7 * 6/5");
+    let mut input = String::from("4 + 574/3");
     let tokens = tokenize(&mut input);
     let postfix = infix_to_postfix(tokens);
 
