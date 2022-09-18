@@ -238,7 +238,7 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
 
                 loop {
                     println!("acc: <{}>", acc);
-                    println!("curr: <{}>", current_char.as_ref().unwrap());
+                    println!("curr: <{}>", current_char.as_ref().unwrap_or_else(|| &' '));
                     if current_char == None
                         || current_char.unwrap().is_ascii_punctuation()
                         || current_char.unwrap().is_whitespace()
