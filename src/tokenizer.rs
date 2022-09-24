@@ -19,8 +19,10 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
     let for_regex = Regex::new(r"for\z").unwrap();
     let while_regex = Regex::new(r"while\z").unwrap();
     let each_regex = Regex::new(r"each\z").unwrap();
+    let in_regex = Regex::new(r"in\z").unwrap();
     let loop_regex = Regex::new(r"loop\z").unwrap();
     let function_regex = Regex::new(r"function\z").unwrap();
+    let mod_regex = Regex::new(r"mod\z").unwrap();
 
     let mut text_itr = program_string.chars();
     let mut current_char;
@@ -33,99 +35,31 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
         }
         //println!("current char in match: {}", current_char.as_ref().unwrap());
         match current_char.unwrap() {
-            'v' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &var_regx,
-                    &mut current_char.unwrap(),
-                    TokenType::Assign,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'i' => {
-                let token_tuple = generate_keyword_regex_token(
-                    &mut text_itr,
-                    &[(&is_regex, TokenType::Is), (&if_regex, TokenType::If)],
-                    &mut current_char.unwrap(),
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'a' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &and_regex,
-                    &mut current_char.unwrap(),
-                    TokenType::And,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'o' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &or_regex,
-                    &mut current_char.unwrap(),
-                    TokenType::Or,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'n' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &not_regex,
-                    &mut current_char.unwrap(),
-                    TokenType::Not,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'f' => {
+            'a'..='z' => {
                 let token_tuple = generate_keyword_regex_token(
                     &mut text_itr,
                     &[
                         (&for_regex, TokenType::For),
-                        (&function_regex, TokenType::Function),
-                    ],
-                    &mut current_char.unwrap(),
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'e' => {
-                let token_tuple = generate_keyword_regex_token(
-                    &mut text_itr,
-                    &[
                         (&each_regex, TokenType::Each),
                         (&else_regex, TokenType::Else),
+                        (&var_regx, TokenType::Assign),
+                        (&is_regex, TokenType::Is),
+                        (&if_regex, TokenType::If),
+                        (&in_regex, TokenType::In),
+                        (&and_regex, TokenType::And),
+                        (&or_regex, TokenType::Or),
+                        (&not_regex, TokenType::Not),
+                        (&function_regex, TokenType::Function),
+                        (&loop_regex, TokenType::Loop),
+                        (&while_regex, TokenType::While),
+                        (&mod_regex, TokenType::Mod),
                     ],
                     &mut current_char.unwrap(),
                 );
                 token = token_tuple.0;
                 current_char = Some(token_tuple.1);
             }
-            'l' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &loop_regex,
-                    &mut current_char.unwrap(),
-                    TokenType::Loop,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
-            'w' => {
-                let token_tuple = generate_regex_token(
-                    &mut text_itr,
-                    &while_regex,
-                    &mut current_char.unwrap(),
-                    TokenType::While,
-                );
-                token = token_tuple.0;
-                current_char = Some(token_tuple.1);
-            }
+
             '=' => {
                 token = generate_simple_token(TokenType::Equals);
                 current_char = text_itr.next();

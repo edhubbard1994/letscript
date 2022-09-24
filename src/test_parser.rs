@@ -14,11 +14,11 @@ pub fn test_collect_expressions() {
 
 #[test]
 pub fn test_infix_to_postfix() {
-    let mut input = String::from("4 + 574/3 - y");
+    let mut input = String::from("5+ 7 or 3 * 5");
     let tokens = tokenize(&mut input);
-    //let postfix = infix_to_postfix(tokens);
+    let postfix = infix_to_postfix(tokens);
 
-    tokens.iter().for_each(|t| {
+    postfix.iter().for_each(|t| {
         if t.tok_type == TokenType::Literal {
             println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
         } else {

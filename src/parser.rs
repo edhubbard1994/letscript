@@ -46,6 +46,8 @@ pub fn parse(tokens: &mut Vec<Token>) {
             TokenType::OpenParen => todo!(),
             TokenType::CloseParen => todo!(),
             TokenType::NewLine => todo!(),
+            TokenType::Mod => todo!(),
+            TokenType::In => todo!(),
         }
         token = itr.next();
     }
@@ -79,10 +81,19 @@ pub fn collect_expression_tokens<'a>(
 
 pub fn precedence(tok: &Token) -> u8 {
     return match tok.tok_type {
+        //multiplication
         TokenType::Mult => 255,
         TokenType::Div => 255,
-        TokenType::Plus => 254,
-        TokenType::Minus => 254,
+        TokenType::Mod => 255,
+        //addition
+        TokenType::Plus => 253,
+        TokenType::Minus => 253,
+        //equality
+        TokenType::In => 252,
+        TokenType::Equals => 252,
+        //logical
+        TokenType::And => 251,
+        TokenType::Or => 251,
         _ => 0,
     };
 }
@@ -149,4 +160,32 @@ pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     return operand_queue;
 }
 
-pub fn eval_expression() {}
+fn resolve_type(operand: str) {}
+
+fn expression_operation(operand1: Token, operand2: Token, operator: Token) -> Token {
+    match operator.tok_type {
+        TokenType::Mult => {}
+        TokenType::Div => {}
+        TokenType::Mod => {}
+        TokenType::Plus => {}
+        TokenType::Minus => {}
+        TokenType::Equals => {}
+        TokenType::In => {}
+        TokenType::Or => {}
+        TokenType::And => {}
+
+        _ => {
+            todo!("return error");
+        }
+    }
+}
+
+pub fn eval_expression(postfix_expr: &mut Vec<Token>) {
+    let calc_stack = LinkedList::<Token>::new();
+    for token in postfix_expr {
+        if precedence(token) == 0 {
+            calc_stack.push_front(token.clone())
+        } else {
+        }
+    }
+}
