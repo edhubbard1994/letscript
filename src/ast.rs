@@ -2,6 +2,8 @@ use std::any::Any;
 
 use crate::token::Token;
 use crate::token::TokenType;
+use crate::token::TokenValue;
+use regex::Regex;
 use sha2::Digest;
 use sha2::Sha256;
 
@@ -10,22 +12,25 @@ pub trait LSObject {
     fn to_string(&self) -> String;
     fn get_type(&self) -> String;
     fn get_name(&self) -> String;
+    fn as_any(&self) -> &dyn Any;
 }
+
 pub trait LSValue {
+    fn get_value(&self) -> String;
     fn get_value_type(&self) -> String;
     fn cast_to_int(&self) -> IntValue;
     fn cast_to_float(&self) -> FloatValue;
     fn cast_to_bool(&self) -> BoolValue;
 }
 
-trait Operable {
-    fn add(&self, num: &impl LSValue) -> &dyn LSValue;
-    fn subtract(&self, num: &impl LSValue) -> &dyn LSValue;
-    fn multiply(&self, num: &impl LSValue) -> &dyn LSValue;
-    fn divide(&self, num: &impl LSValue) -> &dyn LSValue;
-    fn modulus(&self, num: &impl LSValue) -> &dyn LSValue;
-    fn and(&self, right: &impl LSValue) -> &dyn LSValue;
-    fn or(&self, right: &impl LSValue) -> &dyn LSValue;
+pub unsafe trait Operable {
+    fn add(&self, right: &impl LSValue) -> Box<&dyn LSValue>;
+    fn subtract(&self, right: &impl LSValue) -> Box<&Self>;
+    fn multiply(&self, right: &impl LSValue) -> Box<&Self>;
+    fn divide(&self, right: &impl LSValue) -> Box<&Self>;
+    fn modulus(&self, right: &impl LSValue) -> Box<&Self>;
+    fn and(&self, right: &impl LSValue) -> Box<&Self>;
+    fn or(&self, right: &impl LSValue) -> Box<&Self>;
 }
 
 struct IntValue {
@@ -46,6 +51,10 @@ impl LSObject for IntValue {
     }
     fn get_name(&self) -> String {
         return format!("IntegerValue({})", &self.val);
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        return self;
     }
 }
 
@@ -72,84 +81,88 @@ impl LSValue for IntValue {
     fn get_value_type(&self) -> String {
         return self.get_type();
     }
+
+    fn get_value(&self) -> String {
+        return self.val.to_string();
+    }
 }
 
-impl Operable for IntValue {
-    fn add(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" {
-            return &IntValue {
-                val: self.val + num.cast_to_int().val,
-            };
-        } else if num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: (self.val as f64) + num.cast_to_float().val,
-            };
+unsafe impl Operable for IntValue {
+    fn add(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" {
+            return Box::new(&IntValue {
+                val: self.val + right.cast_to_int().val,
+            });
+        } else if right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: (self.val as f64) + right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn subtract(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" {
-            return &IntValue {
-                val: self.val - num.cast_to_int().val,
-            };
-        } else if num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: (self.val as f64) - num.cast_to_float().val,
-            };
+    fn subtract(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" {
+            return Box::new(&IntValue {
+                val: self.val - right.cast_to_int().val,
+            });
+        } else if right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: (self.val as f64) - right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn multiply(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" {
-            return &IntValue {
-                val: self.val * num.cast_to_int().val,
-            };
-        } else if num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: (self.val as f64) * num.cast_to_float().val,
-            };
+    fn multiply(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" {
+            return Box::new(&IntValue {
+                val: self.val * right.cast_to_int().val,
+            });
+        } else if right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: (self.val as f64) * right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn divide(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" {
-            return &IntValue {
-                val: self.val / num.cast_to_int().val,
-            };
-        } else if num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: (self.val as f64) / num.cast_to_float().val,
-            };
+    fn divide(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" {
+            return Box::new(&IntValue {
+                val: self.val / right.cast_to_int().val,
+            });
+        } else if right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: (self.val as f64) / right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn modulus(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" {
-            return &IntValue {
-                val: self.val % num.cast_to_int().val,
-            };
-        } else if num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: (self.val as f64) % num.cast_to_float().val,
-            };
+    fn modulus(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" {
+            return Box::new(&IntValue {
+                val: self.val % right.cast_to_int().val,
+            });
+        } else if right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: (self.val as f64) % right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn and(&self, right: &impl LSValue) -> &dyn LSValue {
+    fn and(&self, right: &impl LSValue) -> Box<&Self> {
         todo!()
     }
 
-    fn or(&self, right: &impl LSValue) -> &dyn LSValue {
+    fn or(&self, right: &impl LSValue) -> Box<&Self> {
         todo!()
     }
 }
@@ -176,6 +189,9 @@ impl LSObject for FloatValue {
     fn get_name(&self) -> String {
         return format!("FloatValue({})", &self.val);
     }
+    fn as_any(&self) -> &dyn Any {
+        return self;
+    }
 }
 
 impl LSValue for FloatValue {
@@ -199,64 +215,67 @@ impl LSValue for FloatValue {
         }
         return BoolValue { val: true };
     }
+    fn get_value(&self) -> String {
+        return self.val.to_string();
+    }
 }
 
-impl Operable for FloatValue {
-    fn add(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" || num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: self.val + num.cast_to_float().val,
-            };
+unsafe impl Operable for FloatValue {
+    fn add(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" || right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: self.val + right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn subtract(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" || num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: self.val - num.cast_to_float().val,
-            };
+    fn subtract(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" || right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: self.val - right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn multiply(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" || num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: self.val * num.cast_to_float().val,
-            };
+    fn multiply(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" || right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: self.val * right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn divide(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" || num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: self.val / num.cast_to_float().val,
-            };
+    fn divide(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" || right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: self.val / right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn modulus(&self, num: &impl LSValue) -> &dyn LSValue {
-        if num.get_value_type() == "Integer" || num.get_value_type() == "Float" {
-            return &FloatValue {
-                val: self.val % num.cast_to_float().val,
-            };
+    fn modulus(&self, right: &impl LSValue) -> Box<&Self> {
+        if right.get_value_type() == "Integer" || right.get_value_type() == "Float" {
+            return Box::new(&FloatValue {
+                val: self.val % right.cast_to_float().val,
+            });
         } else {
             todo!("return Error")
         }
     }
 
-    fn and(&self, right: &impl LSValue) -> &dyn LSValue {
+    fn and(&self, right: &impl LSValue) -> Box<&Self> {
         todo!()
     }
 
-    fn or(&self, right: &impl LSValue) -> &dyn LSValue {
+    fn or(&self, right: &impl LSValue) -> Box<&Self> {
         todo!()
     }
 }
@@ -283,6 +302,9 @@ impl LSObject for BoolValue {
     fn get_name(&self) -> String {
         return format!("BooleanValue({})", &self.val);
     }
+    fn as_any(&self) -> &dyn Any {
+        return self;
+    }
 }
 
 impl LSValue for BoolValue {
@@ -306,6 +328,49 @@ impl LSValue for BoolValue {
 
     fn cast_to_bool(&self) -> BoolValue {
         return *self.clone();
+    }
+    fn get_value(&self) -> String {
+        return self.val.to_string();
+    }
+}
+
+unsafe impl Operable for BoolValue {
+    fn add(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
+            val: String::from("Undefined"),
+        });
+    }
+
+    fn subtract(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
+            val: String::from("Undefined"),
+        });
+    }
+
+    fn multiply(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
+            val: String::from("Undefined"),
+        });
+    }
+
+    fn divide(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
+            val: String::from("Undefined"),
+        });
+    }
+
+    fn modulus(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
+            val: String::from("Undefined"),
+        });
+    }
+
+    fn and(&self, right: &impl LSValue) -> Box<&Self> {
+        todo!()
+    }
+
+    fn or(&self, right: &impl LSValue) -> Box<&Self> {
+        todo!()
     }
 }
 
@@ -331,6 +396,9 @@ impl LSObject for UndefinedValue {
     fn get_name(&self) -> String {
         return format!("Undefined");
     }
+    fn as_any(&self) -> &dyn Any {
+        return self;
+    }
 }
 
 impl LSValue for UndefinedValue {
@@ -349,49 +417,52 @@ impl LSValue for UndefinedValue {
     fn cast_to_bool(&self) -> BoolValue {
         todo!("Return Error")
     }
+    fn get_value(&self) -> String {
+        return self.val.to_string();
+    }
 }
 
-impl Operable for UndefinedValue {
-    fn add(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+unsafe impl Operable for UndefinedValue {
+    fn add(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn subtract(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn subtract(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn multiply(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn multiply(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn divide(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn divide(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn modulus(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn modulus(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn and(&self, right: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn and(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn or(&self, right: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn or(&self, right: &impl LSValue) -> Box<&Self> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 }
 
@@ -417,6 +488,9 @@ impl LSObject for NullValue {
     fn get_name(&self) -> String {
         return format!("Null");
     }
+    fn as_any(&self) -> &dyn Any {
+        return self;
+    }
 }
 
 impl LSValue for NullValue {
@@ -435,48 +509,141 @@ impl LSValue for NullValue {
     fn cast_to_bool(&self) -> BoolValue {
         return BoolValue { val: false };
     }
+    fn get_value(&self) -> String {
+        return self.val.to_string();
+    }
 }
 
-impl Operable for NullValue {
-    fn add(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+unsafe impl Operable for NullValue {
+    fn add(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn subtract(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn subtract(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn multiply(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn multiply(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn divide(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn divide(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn modulus(&self, num: &impl LSValue) -> &dyn LSValue {
-        return &UndefinedValue {
+    fn modulus(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&UndefinedValue {
             val: String::from("Undefined"),
-        };
+        });
     }
 
-    fn and(&self, right: &impl LSValue) -> &dyn LSValue {
-        return &BoolValue {
+    fn and(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&BoolValue {
             val: false && right.cast_to_bool().val,
-        };
+        });
     }
 
-    fn or(&self, right: &impl LSValue) -> &dyn LSValue {
-        return &BoolValue {
+    fn or(&self, right: &impl LSValue) -> Box<&UndefinedValue> {
+        return Box::new(&BoolValue {
             val: false || right.cast_to_bool().val,
+        });
+    }
+}
+
+pub trait ValueOp: LSValue + Operable {}
+
+pub fn token_to_value(left: Token) -> &'static dyn LSValue {
+    let int_regx = Regex::new(r"\d+\z").unwrap();
+    let float_regx = Regex::new(r"\d+\.\d+\z").unwrap();
+    let bool_regx = Regex::new(r"(true\b|false\b)").unwrap();
+    let null_regx = Regex::new(r"null\z").unwrap();
+    let undef_regx = Regex::new(r"undefined\z").unwrap();
+    let left_val = left.tok_value.unwrap().s_val.unwrap();
+    if int_regx.is_match(&left_val) {
+        return &IntValue {
+            val: left_val.parse::<i64>().ok().unwrap(),
+        };
+    } else if float_regx.is_match(&left_val) {
+        return &FloatValue {
+            val: left_val.parse::<f64>().ok().unwrap(),
+        };
+    } else if bool_regx.is_match(&left_val) {
+        return &BoolValue {
+            val: left_val.parse::<bool>().ok().unwrap(),
+        };
+    } else if null_regx.is_match(&left_val) {
+        return &NullValue {
+            val: String::from("Null"),
+        };
+    } else {
+        return &UndefinedValue {
+            val: String::from("Undefined"),
         };
     }
+}
+
+pub fn token_to_operable(left: Token) -> Box<Operable> {
+    let int_regx = Regex::new(r"\d+\z").unwrap();
+    let float_regx = Regex::new(r"\d+\.\d+\z").unwrap();
+    let bool_regx = Regex::new(r"(true\b|false\b)").unwrap();
+    let null_regx = Regex::new(r"null\z").unwrap();
+    let undef_regx = Regex::new(r"undefined\z").unwrap();
+    let left_val = left.tok_value.unwrap().s_val.unwrap();
+    if int_regx.is_match(&left_val) {
+        return Box::new(&IntValue {
+            val: left_val.parse::<i64>().ok().unwrap(),
+        });
+    } else if float_regx.is_match(&left_val) {
+        return Box::new(&FloatValue {
+            val: left_val.parse::<f64>().ok().unwrap(),
+        });
+    } else if bool_regx.is_match(&left_val) {
+        return &BoolValue {
+            val: left_val.parse::<bool>().ok().unwrap(),
+        };
+    } else if null_regx.is_match(&left_val) {
+        return &NullValue {
+            val: String::from("Null"),
+        };
+    } else {
+        return &UndefinedValue {
+            val: String::from("Undefined"),
+        };
+    }
+}
+
+pub fn operate(left: Token, right: Token, operator: Token) -> Token {
+    let l = token_to_operable(left);
+    let r = token_to_value(right);
+    let result;
+    match operator.tok_type {
+        TokenType::Mult => result = l.multiply(r),
+        TokenType::Div => {}
+        TokenType::Mod => {}
+        TokenType::Plus => {}
+        TokenType::Minus => {}
+        TokenType::Equals => {}
+        TokenType::In => {}
+        TokenType::Or => {}
+        TokenType::And => {}
+
+        _ => {
+            todo!("return error");
+        }
+    }
+    let t_val = TokenValue {
+        s_val: Some(result.get_value()),
+    };
+    return Token {
+        tok_type: TokenType::Literal,
+        tok_value: Some(t_val),
+    };
 }

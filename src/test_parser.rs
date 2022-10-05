@@ -25,5 +25,5 @@ pub fn test_infix_to_postfix() {
             println!("Token({:?})", t.tok_type);
         }
     });
-    assert_eq!(1, 2);
+    assert_eq!(postfix.len(), 7);
 }
