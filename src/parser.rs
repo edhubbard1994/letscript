@@ -9,8 +9,6 @@ use std::collections::LinkedList;
 use std::slice::Iter;
 use std::vec;
 
-use crate::ast::token_to_value;
-use crate::ast::{LSValue, Operable};
 pub fn parse(tokens: &mut Vec<Token>) {
     let mut itr = tokens.iter();
     let mut token = itr.next();
@@ -165,42 +163,42 @@ pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     return operand_queue;
 }
 
-fn expression_operation(left: &impl Operable, right: &impl LSValue, operator: Token) -> Token {
-    let mut result;
+// fn expression_operation(left: &impl Operable, right: &impl LSValue, operator: Token) -> Token {
+//     let mut result;
 
-    match operator.tok_type {
-        TokenType::Mult => result = left.multiply(right),
-        TokenType::Div => {}
-        TokenType::Mod => {}
-        TokenType::Plus => {}
-        TokenType::Minus => {}
-        TokenType::Equals => {}
-        TokenType::In => {}
-        TokenType::Or => {}
-        TokenType::And => {}
+//     match operator.tok_type {
+//         TokenType::Mult => result = left.multiply(right),
+//         TokenType::Div => {}
+//         TokenType::Mod => {}
+//         TokenType::Plus => {}
+//         TokenType::Minus => {}
+//         TokenType::Equals => {}
+//         TokenType::In => {}
+//         TokenType::Or => {}
+//         TokenType::And => {}
 
-        _ => {
-            todo!("return error");
-        }
-    }
-    return Token {
-        tok_type: TokenType::Literal,
-        tok_value: todo!(),
-    };
-}
+//         _ => {
+//             todo!("return error");
+//         }
+//     }
+//     return Token {
+//         tok_type: TokenType::Literal,
+//         tok_value: todo!(),
+//     };
+// }
 
-pub fn eval_expression(postfix_expr: &mut Vec<Token>) {
-    let mut calc_stack = LinkedList::<Token>::new();
-    let mut token = postfix_expr.get(0).unwrap();
-    let mut expr = postfix_expr.clone();
-    while expr.is_empty() == false {
-        if precedence(token) == 0 {
-            calc_stack.push_front(token.clone())
-        } else {
-            let right = calc_stack.pop_front().unwrap();
-            let left = calc_stack.pop_front().unwrap();
-            let result_token = operate(left, right, token.clone());
-            expr.push(result_token.clone());
-        }
-    }
-}
+// pub fn eval_expression(postfix_expr: &mut Vec<Token>) {
+//     let mut calc_stack = LinkedList::<Token>::new();
+//     let mut token = postfix_expr.get(0).unwrap();
+//     let mut expr = postfix_expr.clone();
+//     while expr.is_empty() == false {
+//         if precedence(token) == 0 {
+//             calc_stack.push_front(token.clone())
+//         } else {
+//             let right = calc_stack.pop_front().unwrap();
+//             let left = calc_stack.pop_front().unwrap();
+//             let result_token = operate(left, right, token.clone());
+//             expr.push(result_token.clone());
+//         }
+//     }
+// }
