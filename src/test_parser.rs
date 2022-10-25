@@ -149,3 +149,37 @@ pub fn test_eval_postfix_6() {
 
     assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "true");
 }
+
+#[test]
+pub fn test_eval_postfix_7() {
+    let mut input = String::from("5 = 5 and 3 = 2");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "false");
+}
+
+#[test]
+pub fn test_eval_postfix_8() {
+    let mut input = String::from("((1 +4)  = 5) and 2 = 2");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "true");
+}
