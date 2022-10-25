@@ -2,6 +2,7 @@
 pub enum TokenType {
     Assign,
     Equals,
+    NotEqual,
     Plus,
     Minus,
     Mult,

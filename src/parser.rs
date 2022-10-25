@@ -3,6 +3,7 @@
 use crate::ast::operate;
 use crate::token::Token;
 use crate::token::TokenType;
+use crate::token::TokenValue;
 
 use std::collections::HashMap;
 use std::collections::LinkedList;
@@ -51,6 +52,7 @@ pub fn parse(tokens: &mut Vec<Token>) {
             TokenType::NewLine => todo!(),
             TokenType::Mod => todo!(),
             TokenType::In => todo!(),
+            TokenType::NotEqual => todo!(),
         }
         token = itr.next();
     }
@@ -82,6 +84,20 @@ pub fn collect_expression_tokens<'a>(
     return (current.clone(), acc);
 }
 
+pub fn resolve_unary_operators(tokens: Vec<Token>) -> Vec<Token> {
+    let mut token_iter = tokens.into_iter();
+    let mut token = token_iter.next();
+    let mut new_expr = Vec::<Token>::new();
+    while token.is_some() {
+        let mut tok = token.clone().unwrap();
+        if tok.tok_type == TokenType::Not {}
+        new_expr.push(token.clone().unwrap());
+
+        token = token_iter.next()
+    }
+    return Vec::new();
+}
+
 pub fn precedence(tok: &Token) -> u8 {
     return match tok.tok_type {
         //multiplication
@@ -97,6 +113,12 @@ pub fn precedence(tok: &Token) -> u8 {
         //logical
         TokenType::And => 251,
         TokenType::Or => 251,
+
+        TokenType::GreaterThan => 250,
+        TokenType::LessThan => 250,
+        TokenType::Gte => 250,
+        TokenType::Lte => 250,
+        TokenType::Equals => 250,
         _ => 0,
     };
 }
@@ -163,42 +185,35 @@ pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     return operand_queue;
 }
 
-// fn expression_operation(left: &impl Operable, right: &impl LSValue, operator: Token) -> Token {
-//     let mut result;
+pub fn eval_expression(postfix_expr: &mut Vec<Token>) -> Token {
+    let mut calc_stack = LinkedList::<Token>::new();
+    let mut iter = postfix_expr.into_iter();
+    let mut token_option = iter.next();
 
-//     match operator.tok_type {
-//         TokenType::Mult => result = left.multiply(right),
-//         TokenType::Div => {}
-//         TokenType::Mod => {}
-//         TokenType::Plus => {}
-//         TokenType::Minus => {}
-//         TokenType::Equals => {}
-//         TokenType::In => {}
-//         TokenType::Or => {}
-//         TokenType::And => {}
-
-//         _ => {
-//             todo!("return error");
-//         }
-//     }
-//     return Token {
-//         tok_type: TokenType::Literal,
-//         tok_value: todo!(),
-//     };
-// }
-
-// pub fn eval_expression(postfix_expr: &mut Vec<Token>) {
-//     let mut calc_stack = LinkedList::<Token>::new();
-//     let mut token = postfix_expr.get(0).unwrap();
-//     let mut expr = postfix_expr.clone();
-//     while expr.is_empty() == false {
-//         if precedence(token) == 0 {
-//             calc_stack.push_front(token.clone())
-//         } else {
-//             let right = calc_stack.pop_front().unwrap();
-//             let left = calc_stack.pop_front().unwrap();
-//             let result_token = operate(left, right, token.clone());
-//             expr.push(result_token.clone());
-//         }
-//     }
-// }
+    println!("loop VV");
+    loop {
+        let token = token_option.unwrap();
+        if precedence(&token.clone()) == 0 {
+            calc_stack.push_front(token.clone())
+        } else {
+            let right = calc_stack.pop_front().unwrap();
+            let left = calc_stack.pop_front().unwrap();
+            let result_token = operate(left, right, token.clone());
+            println!(
+                "result:{}",
+                result_token.clone().tok_value.unwrap().s_val.unwrap()
+            );
+            calc_stack.push_front(result_token.clone());
+        }
+        token_option = iter.next();
+        if calc_stack.len() == 1 && token_option.is_none() {
+            break;
+        }
+    }
+    let ret_val = calc_stack.front().unwrap();
+    println!(
+        "returns {}",
+        &ret_val.clone().tok_value.unwrap().s_val.unwrap()
+    );
+    return ret_val.clone();
+}

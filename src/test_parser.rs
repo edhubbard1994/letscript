@@ -1,4 +1,5 @@
 use crate::parser::collect_expression_tokens;
+use crate::parser::eval_expression;
 use crate::parser::infix_to_postfix;
 use crate::token::TokenType;
 use crate::tokenizer::tokenize;
@@ -13,7 +14,7 @@ pub fn test_collect_expressions() {
 }
 
 #[test]
-pub fn test_infix_to_postfix() {
+pub fn test_infix_to_postfix_1() {
     let mut input = String::from("5+ 7 or 3 * 5");
     let tokens = tokenize(&mut input);
     let postfix = infix_to_postfix(tokens);
@@ -26,4 +27,125 @@ pub fn test_infix_to_postfix() {
         }
     });
     assert_eq!(postfix.len(), 7);
+}
+
+#[test]
+pub fn test_infix_to_postfix_2() {
+    let mut input = String::from("(3 - 5) * 12");
+    let tokens = tokenize(&mut input);
+    let postfix = infix_to_postfix(tokens);
+
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+    assert_eq!(postfix.len(), 5);
+}
+
+#[test]
+pub fn test_eval_postfix_1() {
+    let mut input = String::from("5+ 7 or 3 * 5");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "true");
+}
+
+#[test]
+pub fn test_eval_postfix_2() {
+    let mut input = String::from("(3 - 5) * 12");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "-24");
+}
+
+#[test]
+pub fn test_eval_postfix_3() {
+    let mut input = String::from("(3 * 13) mod 12");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "3");
+}
+
+#[test]
+pub fn test_eval_postfix_4() {
+    let mut input = String::from("(42.6 /6) + 1");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(
+        evaled.tok_value.unwrap().s_val.unwrap(),
+        "8.100000000000001"
+    );
+}
+
+#[test]
+pub fn test_eval_postfix_5() {
+    let mut input = String::from("5 > 7");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "false");
+}
+
+#[test]
+pub fn test_eval_postfix_6() {
+    let mut input = String::from("5 >= 5");
+    let tokens = tokenize(&mut input);
+    let mut postfix = infix_to_postfix(tokens);
+    let evaled = eval_expression(&mut postfix);
+    postfix.iter().for_each(|t| {
+        if t.tok_type == TokenType::Literal {
+            println!("Token({})", t.tok_value.clone().unwrap().s_val.unwrap())
+        } else {
+            println!("Token({:?})", t.tok_type);
+        }
+    });
+
+    assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "true");
 }
