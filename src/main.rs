@@ -1,6 +1,6 @@
-mod ast;
+mod expr;
 mod parser;
-mod test_ast;
+mod test_expr;
 mod test_parser;
 mod token;
 mod tokenizer;

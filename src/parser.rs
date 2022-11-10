@@ -1,6 +1,6 @@
 //use crate::ast::token_to_operable;
 
-use crate::ast::operate;
+use crate::expr::operate;
 use crate::token::Token;
 use crate::token::TokenType;
 use crate::token::TokenValue;
@@ -53,6 +53,7 @@ pub fn parse(tokens: &mut Vec<Token>) {
             TokenType::Mod => todo!(),
             TokenType::In => todo!(),
             TokenType::NotEqual => todo!(),
+            TokenType::TokenError => todo!(),
         }
         token = itr.next();
     }
