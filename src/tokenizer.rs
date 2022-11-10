@@ -241,7 +241,7 @@ fn generate_keyword_regex_token(
     while *current != ' ' && current.is_alphanumeric() {
         acc.push(current.clone());
         println!("loop char regex = {}", current.clone());
-        *current = stream.next().unwrap();
+        *current = stream.next().unwrap_or_else(|| ' ');
     }
     println!("regex text: {}", acc.clone().as_str());
 

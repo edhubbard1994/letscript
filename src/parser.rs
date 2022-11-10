@@ -84,18 +84,40 @@ pub fn collect_expression_tokens<'a>(
     return (current.clone(), acc);
 }
 
-pub fn resolve_unary_operators(tokens: Vec<Token>) -> Vec<Token> {
-    let mut token_iter = tokens.into_iter();
-    let mut token = token_iter.next();
+pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
     let mut new_expr = Vec::<Token>::new();
+    let mut last_was_operator = false;
+    let mut itr = tokens.into_iter();
+    let mut token = itr.next();
     while token.is_some() {
-        let mut tok = token.clone().unwrap();
-        if tok.tok_type == TokenType::Not {}
-        new_expr.push(token.clone().unwrap());
-
-        token = token_iter.next()
+        match token.clone().unwrap().tok_type {
+            TokenType::Not => {
+                new_expr.push(Token {
+                    tok_type: TokenType::Bool,
+                    tok_value: Some(TokenValue {
+                        s_val: Some(String::from("false")),
+                    }),
+                });
+                new_expr.push(Token {
+                    tok_type: TokenType::Equals,
+                    tok_value: None,
+                });
+            }
+            TokenType::Minus => {
+                if last_was_operator == true {
+                    token = itr.next();
+                }
+            }
+            _ => new_expr.push(token.clone().unwrap()),
+        }
+        last_was_operator = if precedence(&token.unwrap().clone()) > 0 {
+            true
+        } else {
+            false
+        };
+        token = itr.next();
     }
-    return Vec::new();
+    return new_expr;
 }
 
 pub fn precedence(tok: &Token) -> u8 {

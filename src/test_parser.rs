@@ -1,6 +1,7 @@
 use crate::parser::collect_expression_tokens;
 use crate::parser::eval_expression;
 use crate::parser::infix_to_postfix;
+use crate::parser::resolve_unary_operators;
 use crate::token::TokenType;
 use crate::tokenizer::tokenize;
 
@@ -11,6 +12,15 @@ pub fn test_collect_expressions() {
     let current = tokens.iter().next().unwrap();
     let collected = collect_expression_tokens(current, &mut tokens.iter());
     assert_eq!(collected.1.len(), 9);
+}
+
+#[test]
+pub fn test_resolve_unary_operators() {
+    let mut input = String::from("not true");
+    let tokens = tokenize(&mut input);
+    let result = resolve_unary_operators(tokens);
+    assert_eq!(result.len(), 3);
+    assert_eq!(result[1].tok_type, TokenType::Equals)
 }
 
 #[test]

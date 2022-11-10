@@ -38,6 +38,7 @@ pub enum TokenType {
     OpenParen,
     CloseParen,
     NewLine,
+    TokenError,
 }
 #[derive(Clone)]
 pub struct TokenValue {
