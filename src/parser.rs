@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::slice::Iter;
 use std::vec;
+use std::vec::IntoIter;
 
 pub fn parse(tokens: &mut Vec<Token>) {
     let mut itr = tokens.iter();
@@ -85,39 +86,38 @@ pub fn collect_expression_tokens<'a>(
     return (current.clone(), acc);
 }
 
-pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
-    let mut new_expr = Vec::<Token>::new();
-    let mut last_was_operator = false;
-    let mut itr = tokens.into_iter();
+pub fn find_number_sign_helper(mut itr: std::vec::IntoIter<Token>) -> Token {
     let mut token = itr.next();
-    while token.is_some() {
-        match token.clone().unwrap().tok_type {
-            TokenType::Not => {
-                new_expr.push(Token {
-                    tok_type: TokenType::Bool,
-                    tok_value: Some(TokenValue {
-                        s_val: Some(String::from("false")),
-                    }),
-                });
-                new_expr.push(Token {
-                    tok_type: TokenType::Equals,
-                    tok_value: None,
-                });
+    while token.is_some()
+        && [TokenType::Plus, TokenType::Minus].contains(&token.clone().unwrap().tok_type)
+    {}
+    return Token {
+        tok_type: TokenType::TokenError,
+        tok_value: None,
+    };
+}
+
+pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
+    let mut x = 0;
+    let mut y = x + 1;
+    let new_tokens = Vec::<Token>::new();
+    let window = (tokens[x].tok_type, tokens[y].tok_type);
+    while y <= tokens.len() {
+        match window {
+            (TokenType::Minus, TokenType::Literal) => {
+                let val = String::from("-");
+
+                val.push_str(tokens[y].tok_value.unwrap().s_val.unwrap().as_str());
+                new_tokens.push(Token {
+                    tok_type: TokenType::Literal,
+                    tok_value: Some(TokenValue { s_val: Some(val) }),
+                })
             }
-            TokenType::Minus => {
-                if last_was_operator == true {
-                    token = itr.next();
-                }
-            }
-            _ => new_expr.push(token.clone().unwrap()),
+            (TokenType::Not, TokenType::Literal) => {}
+            (_, _) => {}
         }
-        last_was_operator = if precedence(&token.unwrap().clone()) > 0 {
-            true
-        } else {
-            false
-        };
-        token = itr.next();
     }
+
     return new_expr;
 }
 
@@ -151,15 +151,6 @@ pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
     let mut operand_queue = Vec::<Token>::new();
 
     for token in tokens {
-        // operand_queue.iter().for_each(|t| {
-        //     if t.tok_type == TokenType::Literal {
-        //         print!(" {:?} ", t.tok_value.clone().unwrap().s_val)
-        //     } else {
-        //         print!(" {:?} ", t.tok_type)
-        //     }
-        // });
-        // print!(" | ");
-        // println!("stacksize({})", operator_stack.len());
         let is_operand = token.tok_type == TokenType::Literal;
         if is_operand {
             operand_queue.push(token.clone())

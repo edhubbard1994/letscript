@@ -48,6 +48,7 @@ pub enum LSExpr {
     LtF64(f64, f64),
     GteF64(f64, f64),
     LteF64(f64, f64),
+    Negate(bool),
 }
 
 impl LSExpr {
@@ -91,6 +92,7 @@ impl LSExpr {
             LSExpr::LtF64(l, r) => return LSExpr::Boolean(*l < *r),
             LSExpr::GteF64(l, r) => return LSExpr::Boolean(*l >= *r),
             LSExpr::LteF64(l, r) => return LSExpr::Boolean(*l <= *r),
+            LSExpr::Negate(v) => return LSExpr::Boolean(!*v),
             _ => return LSExpr::Undefined,
         };
     }
@@ -334,6 +336,35 @@ pub fn operate(left: Token, right: Token, operator: Token) -> Token {
             );
             expr = LSExpr::Undefined;
         }
+    }
+    return Token {
+        tok_type: TokenType::Literal,
+        tok_value: Some(TokenValue {
+            s_val: match expr {
+                LSExpr::Int32(x) => Some(x.to_string()),
+                LSExpr::Float64(x) => Some(x.to_string()),
+                LSExpr::Boolean(x) => Some(x.to_string()),
+                LSExpr::Null => None,
+                _ => Some(String::from("Undefined")),
+            },
+        }),
+    };
+}
+
+pub fn operate_unary(value: Token, operator: Token) -> Token {
+    let val = convert_token_to_value(value);
+    let expr;
+    match operator.tok_type {
+        TokenType::Not => {
+            let b_val = val.cast_to_bool();
+            expr = match b_val {
+                LSExpr::Boolean(v) => LSExpr::Negate(v),
+                _ => {
+                    todo!("")
+                }
+            };
+        }
+        _ => {}
     }
     return Token {
         tok_type: TokenType::Literal,
