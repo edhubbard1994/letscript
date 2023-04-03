@@ -360,11 +360,13 @@ pub fn operate_unary(value: Token, operator: Token) -> Token {
             expr = match b_val {
                 LSExpr::Boolean(v) => LSExpr::Negate(v),
                 _ => {
-                    todo!("")
+                    panic!("unknown unary type")
                 }
             };
         }
-        _ => {}
+        _ => {
+            panic!("unknown unary")
+        }
     }
     return Token {
         tok_type: TokenType::Literal,

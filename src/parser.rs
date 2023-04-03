@@ -100,14 +100,14 @@ pub fn find_number_sign_helper(mut itr: std::vec::IntoIter<Token>) -> Token {
 pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
     let mut x = 0;
     let mut y = x + 1;
-    let new_tokens = Vec::<Token>::new();
+    let mut new_tokens = Vec::<Token>::new();
     let window = (tokens[x].tok_type, tokens[y].tok_type);
     while y <= tokens.len() {
         match window {
             (TokenType::Minus, TokenType::Literal) => {
-                let val = String::from("-");
+                let mut val = String::from("-");
 
-                val.push_str(tokens[y].tok_value.unwrap().s_val.unwrap().as_str());
+                val.push_str(tokens[y].tok_value.clone().unwrap().s_val.unwrap().as_str());
                 new_tokens.push(Token {
                     tok_type: TokenType::Literal,
                     tok_value: Some(TokenValue { s_val: Some(val) }),
@@ -118,7 +118,7 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
         }
     }
 
-    return new_expr;
+    return new_tokens;
 }
 
 pub fn precedence(tok: &Token) -> u8 {
