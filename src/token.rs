@@ -40,12 +40,12 @@ pub enum TokenType {
     NewLine,
     TokenError,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TokenValue {
     pub s_val: Option<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Token {
     pub tok_type: TokenType,
     pub tok_value: Option<TokenValue>,

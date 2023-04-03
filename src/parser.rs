@@ -98,24 +98,43 @@ pub fn find_number_sign_helper(mut itr: std::vec::IntoIter<Token>) -> Token {
 }
 
 pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
-    let mut x = 0;
-    let mut y = x + 1;
+    let mut z = 0;
     let mut new_tokens = Vec::<Token>::new();
-    let window = (tokens[x].tok_type, tokens[y].tok_type);
-    while y <= tokens.len() {
+    let mut window = (match tokens.get_mut(z){
+        Some(token) => Some(token.tok_type),
+        None => None
+    }, match tokens.get_mut(z + 1){
+        Some(token) => Some(token.tok_type),
+        None => None
+    }, match tokens.get_mut(z + 2){
+        Some(token) => Some(token.tok_type),
+        None => None
+    });
+    while z < tokens.len() {
         match window {
-            (TokenType::Minus, TokenType::Literal) => {
+            (
+                Some(TokenType::Minus |
+                TokenType::Plus |
+                TokenType::Mult |
+                TokenType::Div |
+                TokenType::Mod)
+                ,Some(TokenType::Minus), Some(TokenType::Literal)) => {
                 let mut val = String::from("-");
-
-                val.push_str(tokens[y].tok_value.clone().unwrap().s_val.unwrap().as_str());
+                println!("{:?}", tokens[z -1].tok_value.clone().unwrap());
+                val.push_str(tokens[z - 1].tok_value.clone().unwrap().s_val.unwrap().as_str());
                 new_tokens.push(Token {
                     tok_type: TokenType::Literal,
                     tok_value: Some(TokenValue { s_val: Some(val) }),
                 })
             }
-            (TokenType::Not, TokenType::Literal) => {}
-            (_, _) => {}
+            (Some(TokenType::Not), Some(TokenType::Literal),_) => {}
+            (_, _, _) => {}
         }
+        z += 1;
+        window = (window.1,window.2,match tokens.get_mut(z){
+            Some(token) => Some(token.tok_type),
+            None => None
+        })
     }
 
     return new_tokens;
