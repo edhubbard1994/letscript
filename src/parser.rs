@@ -99,14 +99,9 @@ pub fn find_number_sign_helper(mut itr: std::vec::IntoIter<Token>) -> Token {
 
 pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
     let mut z = 0;
-    let mut new_tokens = Vec::<Token>::new();
-    let mut window = (match tokens.get_mut(z){
-        Some(token) => Some(token.tok_type),
-        None => None
-    }, match tokens.get_mut(z + 1){
-        Some(token) => Some(token.tok_type),
-        None => None
-    }, match tokens.get_mut(z + 2){
+    let mut new_tokens = Vec::<Option<Token>>::new();
+    let mut window = (None, None,
+     match tokens.get_mut(z){
         Some(token) => Some(token.tok_type),
         None => None
     });
@@ -122,13 +117,17 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
                 let mut val = String::from("-");
                 println!("{:?}", tokens[z].tok_type);
                 val.push_str(tokens[z].tok_value.clone().unwrap().s_val.unwrap().as_str());
-                new_tokens.push(Token {
+                new_tokens.pop();
+                new_tokens.push(None);
+                new_tokens.push(Some(Token {
                     tok_type: TokenType::Literal,
                     tok_value: Some(TokenValue { s_val: Some(val) }),
-                })
+                }))
             }
             (Some(TokenType::Not), Some(TokenType::Literal),_) => {}
-            (_, _, _) => {}
+            (_, _, _) => {
+                new_tokens.push(Some(tokens[z].clone()));
+            }
         }
         z += 1;
         window = (window.1,window.2,match tokens.get_mut(z){
@@ -136,8 +135,9 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
             None => None
         })
     }
-
-    return new_tokens;
+    let final_tokens = new_tokens.into_iter().filter(|t| t.is_some()).flatten().collect();
+    
+    return final_tokens;
 }
 
 pub fn precedence(tok: &Token) -> u8 {
