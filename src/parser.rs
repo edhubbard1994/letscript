@@ -117,11 +117,11 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
                 TokenType::Plus |
                 TokenType::Mult |
                 TokenType::Div |
-                TokenType::Mod)
+                TokenType::Mod) | None
                 ,Some(TokenType::Minus), Some(TokenType::Literal)) => {
                 let mut val = String::from("-");
-                println!("{:?}", tokens[z -1].tok_value.clone().unwrap());
-                val.push_str(tokens[z - 1].tok_value.clone().unwrap().s_val.unwrap().as_str());
+                println!("{:?}", tokens[z].tok_type);
+                val.push_str(tokens[z].tok_value.clone().unwrap().s_val.unwrap().as_str());
                 new_tokens.push(Token {
                     tok_type: TokenType::Literal,
                     tok_value: Some(TokenValue { s_val: Some(val) }),
