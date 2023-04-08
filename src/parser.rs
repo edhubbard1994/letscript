@@ -1,6 +1,7 @@
 //use crate::ast::token_to_operable;
 
 use crate::expr::operate;
+use crate::expr::operate_unary;
 use crate::token::Token;
 use crate::token::TokenType;
 use crate::token::TokenValue;
@@ -124,7 +125,13 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
                     tok_value: Some(TokenValue { s_val: Some(val) }),
                 }))
             }
-            (Some(TokenType::Not), Some(TokenType::Literal),_) => {}
+            (_, Some(TokenType::Not), Some(TokenType::Literal)) => {
+                let val = tokens[z].clone();
+                let operator = tokens[z - 1].clone();
+                let negated = operate_unary(val, operator);
+                new_tokens.pop();
+                new_tokens.push(Some(negated));
+            }
             (_, _, _) => {
                 new_tokens.push(Some(tokens[z].clone()));
             }

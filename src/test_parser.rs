@@ -24,6 +24,17 @@ pub fn test_resolve_unary_operators() {
 }
 
 #[test]
+pub fn test_resolve_unary_operators_1() {
+    let mut input = String::from("not true");
+    let tokens = tokenize(&mut input);
+    let result = resolve_unary_operators(tokens);
+    
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].tok_type, TokenType::Literal);
+    assert_eq!(result[0].clone().tok_value.unwrap().s_val.unwrap(), "false");
+}
+
+#[test]
 pub fn test_infix_to_postfix_1() {
     let mut input = String::from("5+ 7 or 3 * 5");
     let tokens = tokenize(&mut input);
