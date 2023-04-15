@@ -358,7 +358,7 @@ pub fn operate_unary(value: Token, operator: Token) -> Token {
         TokenType::Not => {
             let b_val = val.cast_to_bool();
             expr = match b_val {
-                LSExpr::Boolean(v) => LSExpr::Negate(v),
+                LSExpr::Boolean(v) => LSExpr::Negate(v).eval(),
                 _ => {
                     panic!("unknown unary type")
                 }
@@ -366,8 +366,9 @@ pub fn operate_unary(value: Token, operator: Token) -> Token {
         }
         _ => {
             panic!("unknown unary")
-        }
+        }     
     }
+
     return Token {
         tok_type: TokenType::Literal,
         tok_value: Some(TokenValue {
