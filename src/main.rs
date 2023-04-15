@@ -1,3 +1,5 @@
+mod ast;
+mod test_ast;
 mod expr;
 mod parser;
 mod test_expr;
