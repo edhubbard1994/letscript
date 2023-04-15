@@ -35,6 +35,31 @@ pub fn test_resolve_unary_operators_1() {
 }
 
 #[test]
+pub fn test_resolve_unary_operators_2() {
+    let mut input = String::from("-5");
+    let tokens = tokenize(&mut input);
+    let result = resolve_unary_operators(tokens);
+    assert_eq!("-5", result[0].clone().tok_value.unwrap().s_val.unwrap());
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].tok_type, TokenType::Literal);
+    
+}
+
+#[test]
+pub fn test_resolve_unary_operators_3() {
+    let mut input = String::from("- 2");
+    let tokens = tokenize(&mut input);
+    let result = resolve_unary_operators(tokens);
+    assert_eq!("-2", result[0].clone().tok_value.unwrap().s_val.unwrap());
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].tok_type, TokenType::Literal);
+    
+}
+
+
+
+
+#[test]
 pub fn test_infix_to_postfix_1() {
     let mut input = String::from("5+ 7 or 3 * 5");
     let tokens = tokenize(&mut input);
