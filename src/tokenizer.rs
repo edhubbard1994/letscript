@@ -14,6 +14,7 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
     let gte_regex = Regex::new(r">=\z").unwrap();
     let lte_regex = Regex::new(r"<=\z").unwrap();
     let not_regex = Regex::new(r"not\z").unwrap();
+    let not_eq_regex = Regex::new(r"not=\z").unwrap();
     let if_regex = Regex::new(r"if\z").unwrap();
     let else_regex = Regex::new(r"else\z").unwrap();
     let for_regex = Regex::new(r"for\z").unwrap();
@@ -48,6 +49,7 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
                         (&in_regex, TokenType::In),
                         (&and_regex, TokenType::And),
                         (&or_regex, TokenType::Or),
+                        (&not_eq_regex, TokenType::NotEqual),
                         (&not_regex, TokenType::Not),
                         (&function_regex, TokenType::Function),
                         (&loop_regex, TokenType::Loop),
@@ -238,7 +240,7 @@ fn generate_keyword_regex_token(
 ) -> (Option<Token>, char) {
     let mut acc = String::from("");
 
-    while *current != ' ' && current.is_alphanumeric() {
+    while *current != ' ' && (current.is_alphanumeric() || *current == '_') {
         acc.push(current.clone());
         println!("loop char regex = {}", current.clone());
         *current = stream.next().unwrap_or_else(|| ' ');
@@ -267,7 +269,7 @@ fn generate_operator_regex_token(
     tok_type: TokenType,
 ) -> (Option<Token>, char) {
     let mut acc = String::from("");
-    while *current != ' ' && current.is_ascii_punctuation() {
+    while *current != ' ' && current.is_ascii_punctuation(){
         acc.push(current.clone());
         //println!("loop char = {}", current.clone());
         *current = stream.next().unwrap();
@@ -316,6 +318,7 @@ pub fn test_regex() {
     assert_eq!(matches!(token.unwrap().tok_type, TokenType::Assign), true);
 }
 
+
 #[test]
 pub fn test_simple() {
     let token = generate_simple_token(TokenType::Equals);
@@ -351,6 +354,20 @@ pub fn test_tokenizer_assignment() {
     assert_eq!(matches!(tokens[4].tok_type, TokenType::NewLine), true);
     assert_eq!(tokens.len(), 5);
 }
+
+
+#[test]
+pub fn test_tokenizer_not_eq() {
+    let mut input = String::from("  is_not_running = false \n");
+    let tokens = tokenize(&mut input);
+    tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
+    assert_eq!(matches!(tokens[0].tok_type, TokenType::Literal), true);
+    assert_eq!(matches!(tokens[1].tok_type, TokenType::Equals), true);
+    assert_eq!(matches!(tokens[2].tok_type, TokenType::Literal), true);
+
+    assert_eq!(tokens.len(), 4);
+}
+
 
 #[test]
 pub fn test_tokenizer_combinator() {
