@@ -132,6 +132,11 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
                 new_tokens.pop();
                 new_tokens.push(Some(negated));
             }
+            (_, Some(TokenType::Not), Some(TokenType::Equals)) => {
+                let negated = Token { tok_type: TokenType::NotEqual, tok_value: None };
+                new_tokens.pop();
+                new_tokens.push(Some(negated));
+            }
             (_, _, _) => {
                 new_tokens.push(Some(tokens[z].clone()));
             }

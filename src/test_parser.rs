@@ -56,6 +56,15 @@ pub fn test_resolve_unary_operators_3() {
     
 }
 
+pub fn test_resolve_unary_operators_4() {
+    let mut input = String::from(" x not= 2");
+    let tokens = tokenize(&mut input);
+    let result = resolve_unary_operators(tokens);
+    assert_eq!(result.len(), 3);
+    assert_eq!(result[1].tok_type, TokenType::NotEqual);
+    
+}
+
 
 
 
