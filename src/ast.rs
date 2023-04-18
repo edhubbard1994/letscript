@@ -133,22 +133,6 @@ impl Scope {
                     let val = v.tok_value.unwrap().s_val.unwrap();
                     array.push(SymbolType::String(val));
                 }
-                TokenType::Number => {
-                    let val = v.tok_value.unwrap().n_val.unwrap();
-                    array.push(SymbolType::Number(val));
-                }
-                TokenType::Object => {
-                    let val = v.tok_value.unwrap().o_val.unwrap();
-                    array.push(SymbolType::Object(val));
-                }
-                TokenType::Array => {
-                    let val = v.tok_value.unwrap().a_val.unwrap();
-                    array.push(SymbolType::Array(val));
-                }
-                TokenType::Function => {
-                    let val = v.tok_value.unwrap().f_val.unwrap();
-                    array.push(SymbolType::Function(val));
-                }
                 _ => panic!("invalid value type for array"),
             }
         }
