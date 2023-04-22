@@ -101,20 +101,28 @@ pub fn find_number_sign_helper(mut itr: std::vec::IntoIter<Token>) -> Token {
 pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
     let mut z = 0;
     let mut new_tokens = Vec::<Option<Token>>::new();
-    let mut window = (None, None,
-     match tokens.get_mut(z){
-        Some(token) => Some(token.tok_type),
-        None => None
-    });
+    let mut window = (
+        None,
+        None,
+        match tokens.get_mut(z) {
+            Some(token) => Some(token.tok_type),
+            None => None,
+        },
+    );
     while z < tokens.len() {
         match window {
             (
-                Some(TokenType::Minus |
-                TokenType::Plus |
-                TokenType::Mult |
-                TokenType::Div |
-                TokenType::Mod) | None
-                ,Some(TokenType::Minus), Some(TokenType::Literal)) => {
+                Some(
+                    TokenType::Minus
+                    | TokenType::Plus
+                    | TokenType::Mult
+                    | TokenType::Div
+                    | TokenType::Mod,
+                )
+                | None,
+                Some(TokenType::Minus),
+                Some(TokenType::Literal),
+            ) => {
                 let mut val = String::from("-");
                 println!("{:?}", tokens[z].tok_type);
                 val.push_str(tokens[z].tok_value.clone().unwrap().s_val.unwrap().as_str());
@@ -133,7 +141,10 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
                 new_tokens.push(Some(negated));
             }
             (_, Some(TokenType::Not), Some(TokenType::Equals)) => {
-                let negated = Token { tok_type: TokenType::NotEqual, tok_value: None };
+                let negated = Token {
+                    tok_type: TokenType::NotEqual,
+                    tok_value: None,
+                };
                 new_tokens.pop();
                 new_tokens.push(Some(negated));
             }
@@ -142,13 +153,21 @@ pub fn resolve_unary_operators(mut tokens: Vec<Token>) -> Vec<Token> {
             }
         }
         z += 1;
-        window = (window.1,window.2,match tokens.get_mut(z){
-            Some(token) => Some(token.tok_type),
-            None => None
-        })
+        window = (
+            window.1,
+            window.2,
+            match tokens.get_mut(z) {
+                Some(token) => Some(token.tok_type),
+                None => None,
+            },
+        )
     }
-    let final_tokens = new_tokens.into_iter().filter(|t| t.is_some()).flatten().collect();
-    
+    let final_tokens = new_tokens
+        .into_iter()
+        .filter(|t| t.is_some())
+        .flatten()
+        .collect();
+
     return final_tokens;
 }
 
@@ -175,6 +194,36 @@ pub fn precedence(tok: &Token) -> u8 {
         TokenType::Equals => 250,
         _ => 0,
     };
+}
+
+pub fn expr_type_factory(
+    mut itr: &vec::IntoIter<Token>,
+    mut new_tokens: &Vec<Token>,
+) -> Vec<Token> {
+    let mut token = itr.next();
+    loop {
+        if token.is_none() {
+            break;
+        }
+        match token.unwrap().tok_type {
+            TokenType::OpenParen => {
+                let sub_expr = expr_type_factory(itr, &Vec::<Token>::new());
+            }
+            TokenType::OpenBracket => {}
+            TokenType::Literal
+            | TokenType::And
+            | TokenType::Or
+            | TokenType::Plus
+            | TokenType::Minus
+            | TokenType::Mult
+            | TokenType::Div
+            | TokenType::Mod
+            | TokenType::Not => {}
+            _ => panic!("Invalid token in expression"),
+        }
+        token = itr.next();
+    }
+    return new_tokens;
 }
 
 pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {

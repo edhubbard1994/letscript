@@ -7,6 +7,7 @@ use std::collections::LinkedList;
 static mut CALL_STACK: LinkedList<&Scope> = LinkedList::<&Scope>::new();
 static mut FUNCTION_TABLE: Map<String, LinkedList<Token>> = Map::<String, LinkedList<Token>>::new();
 
+#[derive(Clone, Debug)]
 pub enum SymbolType {
     Number(String),
     String(String),
@@ -15,25 +16,34 @@ pub enum SymbolType {
     Function(FunctionSymbolArgs),
 }
 
+#[derive(Clone, Debug)]
 pub struct FunctionSymbolArgs {
     pub args: Vec<Token>,
     pub body: LinkedList<Token>,
 }
 
+#[derive(Clone, Debug)]
 pub struct ObjectSymbolArgs {
     pub vars: HashMap<String, SymbolType>,
     pub methods: HashMap<String, FunctionSymbolArgs>,
 }
 
+#[derive(Clone, Debug)]
 pub struct ArraySymbolArgs {
     pub array: Vec<SymbolType>,
 }
 
 pub struct Scope {
-    symbols: HashMap<String, SymbolType>,
+    pub symbols: HashMap<String, SymbolType>,
 }
 
 impl Scope {
+    pub fn new() -> Scope {
+        Scope {
+            symbols: HashMap::new(),
+        }
+    }
+
     pub fn add_number(&mut self, name: Token, value: Token) {
         let (n, v) = match (name.tok_type, value.tok_type) {
             (TokenType::Literal, TokenType::Literal) => (
@@ -88,22 +98,6 @@ impl Scope {
                             let val = v.tok_value.unwrap().s_val.unwrap();
                             vars.insert(key, SymbolType::String(val));
                         }
-                        TokenType::Number => {
-                            let val = v.tok_value.unwrap().n_val.unwrap();
-                            vars.insert(key, SymbolType::Number(val));
-                        }
-                        TokenType::Object => {
-                            let val = v.tok_value.unwrap().o_val.unwrap();
-                            vars.insert(key, SymbolType::Object(val));
-                        }
-                        TokenType::Array => {
-                            let val = v.tok_value.unwrap().a_val.unwrap();
-                            vars.insert(key, SymbolType::Array(val));
-                        }
-                        TokenType::Function => {
-                            let val = v.tok_value.unwrap().f_val.unwrap();
-                            methods.insert(key, val);
-                        }
                         _ => panic!("invalid value type for object"),
                     }
                 }
@@ -115,7 +109,7 @@ impl Scope {
             .insert(n, SymbolType::Object(ObjectSymbolArgs { vars, methods }));
     }
 
-    pub fn add_array(name: Token, values: Vec<Token>) {
+    pub fn add_array(&mut self, name: Token, values: Vec<Token>) {
         let n = match name.tok_type {
             TokenType::Literal => name.tok_value.unwrap().s_val.unwrap(),
             _ => panic!("keyword cannot be used as a variable name"),
