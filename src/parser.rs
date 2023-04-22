@@ -196,20 +196,26 @@ pub fn precedence(tok: &Token) -> u8 {
     };
 }
 
-pub fn expr_type_factory(
-    mut itr: &vec::IntoIter<Token>,
-    mut new_tokens: &Vec<Token>,
-) -> Vec<Token> {
+pub fn expr_type_factory(mut itr: vec::IntoIter<Token>) -> Vec<Token> {
     let mut token = itr.next();
+    let mut new_tokens = Vec::<Token>::new();
     loop {
         if token.is_none() {
             break;
         }
-        match token.unwrap().tok_type {
+        match token.clone().unwrap().tok_type {
             TokenType::OpenParen => {
-                let sub_expr = expr_type_factory(itr, &Vec::<Token>::new());
+                let sub_expr = expr_type_factory(itr.clone());
+                let mut postfix = infix_to_postfix(sub_expr);
+                //TODO: resolve all variables here;
+                let x = eval_expression(&mut postfix);
+                new_tokens.push(x);
+            }
+            TokenType::CloseParen => {
+                break;
             }
             TokenType::OpenBracket => {}
+            TokenType::CloseBracet => {}
             TokenType::Literal
             | TokenType::And
             | TokenType::Or
@@ -218,7 +224,7 @@ pub fn expr_type_factory(
             | TokenType::Mult
             | TokenType::Div
             | TokenType::Mod
-            | TokenType::Not => {}
+            | TokenType::Not => new_tokens.push(token.clone().unwrap()),
             _ => panic!("Invalid token in expression"),
         }
         token = itr.next();
