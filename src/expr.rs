@@ -1,5 +1,4 @@
 use regex::Regex;
-use sha2::digest::generic_array::typenum::Or;
 
 use crate::token::{Token, TokenType, TokenValue};
 
@@ -366,7 +365,7 @@ pub fn operate_unary(value: Token, operator: Token) -> Token {
         }
         _ => {
             panic!("unknown unary")
-        }     
+        }
     }
 
     return Token {

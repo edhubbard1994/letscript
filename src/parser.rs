@@ -2,60 +2,85 @@
 
 use crate::expr::operate;
 use crate::expr::operate_unary;
+
 use crate::token::Token;
 use crate::token::TokenType;
 use crate::token::TokenValue;
 
-use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::slice::Iter;
 use std::vec;
-use std::vec::IntoIter;
 
 pub fn parse(tokens: &mut Vec<Token>) {
     let mut itr = tokens.iter();
     let mut token = itr.next();
+
+    match token.unwrap().tok_type {
+        TokenType::Assign => parse_assignment(tokens),
+        TokenType::Bool => todo!(),
+        TokenType::Function => todo!(),
+        TokenType::Quote => todo!(),
+        TokenType::If => todo!(),
+        TokenType::Else => todo!(),
+        TokenType::While => todo!(),
+        TokenType::For => todo!(),
+        TokenType::Loop => todo!(),
+        TokenType::Object => todo!(),
+        TokenType::OpenBrace => todo!(),
+        TokenType::CloseBrace => todo!(),
+        TokenType::OpenBracket => todo!(),
+        TokenType::CloseBracet => todo!(),
+        TokenType::OpenParen => todo!(),
+        TokenType::CloseParen => todo!(),
+        TokenType::NewLine => todo!(),
+        TokenType::TokenError => todo!(),
+        _ => {}
+    }
+}
+
+pub fn parse_assignment(tokens: &mut Vec<Token>) {
+    match (tokens[0].tok_type, tokens[1].tok_type, tokens[2].tok_type) {
+        (TokenType::Assign, TokenType::Literal, TokenType::Is) => {
+            let name = tokens[1].tok_value.clone().unwrap().s_val.unwrap();
+            let value = parse_expression(&mut tokens[3..].to_vec());
+        }
+        (_, _, _) => panic!("keyword cannot be used as a variable name"),
+    }
+}
+
+fn parse_expression(expr: &mut Vec<Token>) {
+    match expr[0].tok_type {
+        TokenType::OpenBracket => {}
+        TokenType::Literal | TokenType::Minus | TokenType::Not => {
+            if expr[expr.len() - 1].tok_type == TokenType::NewLine {
+                expr.pop();
+            }
+            let non_unary = resolve_unary_operators(expr.clone().to_vec());
+            let postfix = infix_to_postfix(non_unary.clone());
+            let evaluated = eval_expression(&mut postfix.clone());
+            println!("{:?}", evaluated);
+        }
+        TokenType::Quote => {}
+        _ => panic!("invalid expression syntax"),
+    }
+}
+
+fn parse_array(tokens: Vec<Token>) {
+    if tokens.len() < 3 {
+        panic!("invalid array syntax");
+    }
+    let mut itr = tokens.iter();
+    let mut token = itr.next();
+    if token.unwrap().tok_type != TokenType::OpenBracket {
+        panic!("invalid array syntax");
+    }
+    token = itr.next();
     while token.is_some() {
         match token.unwrap().tok_type {
             TokenType::Literal => {}
-            TokenType::Assign => todo!(),
-            TokenType::Equals => todo!(),
-            TokenType::Plus => todo!(),
-            TokenType::Minus => todo!(),
-            TokenType::Mult => todo!(),
-            TokenType::Div => todo!(),
-            TokenType::Not => todo!(),
-            TokenType::And => todo!(),
-            TokenType::Or => todo!(),
-            TokenType::Is => todo!(),
-            TokenType::GreaterThan => todo!(),
-            TokenType::LessThan => todo!(),
-            TokenType::Gte => todo!(),
-            TokenType::Lte => todo!(),
-            TokenType::Bool => todo!(),
-            TokenType::Function => todo!(),
-            TokenType::Quote => todo!(),
-            TokenType::If => todo!(),
-            TokenType::Else => todo!(),
-            TokenType::While => todo!(),
-            TokenType::For => todo!(),
-            TokenType::Loop => todo!(),
-            TokenType::Each => todo!(),
-            TokenType::Period => todo!(),
-            TokenType::Colon => todo!(),
-            TokenType::Comma => todo!(),
-            TokenType::Object => todo!(),
-            TokenType::OpenBrace => todo!(),
-            TokenType::CloseBrace => todo!(),
-            TokenType::OpenBracket => todo!(),
-            TokenType::CloseBracet => todo!(),
-            TokenType::OpenParen => todo!(),
-            TokenType::CloseParen => todo!(),
-            TokenType::NewLine => todo!(),
-            TokenType::Mod => todo!(),
-            TokenType::In => todo!(),
-            TokenType::NotEqual => todo!(),
-            TokenType::TokenError => todo!(),
+            TokenType::Comma => {}
+            TokenType::CloseBracet => break,
+            _ => panic!("invalid array syntax"),
         }
         token = itr.next();
     }
@@ -286,6 +311,10 @@ pub fn infix_to_postfix(tokens: Vec<Token>) -> Vec<Token> {
 }
 
 pub fn eval_expression(postfix_expr: &mut Vec<Token>) -> Token {
+    if postfix_expr.len() as i32 == 1 {
+        return postfix_expr[0].clone();
+    }
+
     let mut calc_stack = LinkedList::<Token>::new();
     let mut iter = postfix_expr.into_iter();
     let mut token_option = iter.next();

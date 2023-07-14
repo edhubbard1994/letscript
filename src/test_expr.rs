@@ -1,6 +1,7 @@
 use crate::expr::operate;
 use crate::parser::collect_expression_tokens;
 use crate::parser::infix_to_postfix;
+use crate::parser::precedence;
 use crate::token::TokenType;
 use crate::tokenizer::tokenize;
 
