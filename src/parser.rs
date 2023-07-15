@@ -7,6 +7,8 @@ use crate::token::Token;
 use crate::token::TokenType;
 use crate::token::TokenValue;
 
+use crate::ast;
+
 use std::collections::LinkedList;
 use std::slice::Iter;
 use std::vec;
@@ -43,14 +45,16 @@ pub fn parse_assignment(tokens: &mut Vec<Token>) {
         (TokenType::Assign, TokenType::Literal, TokenType::Is) => {
             let name = tokens[1].tok_value.clone().unwrap().s_val.unwrap();
             let value = parse_expression(&mut tokens[3..].to_vec());
+            ast::CALL_STACK.add_symbol(name, value);
+            println!("{:?}", ast::CALL_STACK)
         }
         (_, _, _) => panic!("keyword cannot be used as a variable name"),
     }
 }
 
-fn parse_expression(expr: &mut Vec<Token>) {
+fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
     match expr[0].tok_type {
-        TokenType::OpenBracket => {}
+        //TokenType::OpenBracket => {}
         TokenType::Literal | TokenType::Minus | TokenType::Not => {
             if expr[expr.len() - 1].tok_type == TokenType::NewLine {
                 expr.pop();
@@ -59,8 +63,9 @@ fn parse_expression(expr: &mut Vec<Token>) {
             let postfix = infix_to_postfix(non_unary.clone());
             let evaluated = eval_expression(&mut postfix.clone());
             println!("{:?}", evaluated);
+            return ast::SymbolType::Number(evaluated.tok_value.unwrap().s_val.unwrap());
         }
-        TokenType::Quote => {}
+        //TokenType::Quote => {}
         _ => panic!("invalid expression syntax"),
     }
 }

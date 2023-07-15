@@ -1,11 +1,19 @@
 use crate::token::Token;
 use crate::token::TokenType;
+use lazy_static::lazy_static;
 use phf::Map;
 use std::collections::HashMap;
 use std::collections::LinkedList;
+use std::ops::DerefMut;
+use std::sync::Mutex;
 
-static mut CALL_STACK: LinkedList<&Scope> = LinkedList::<&Scope>::new();
-static mut FUNCTION_TABLE: Map<String, LinkedList<Token>> = Map::<String, LinkedList<Token>>::new();
+lazy_static! {
+
+
+    #[derive(Clone, Debug)]
+    pub static ref CALL_STACK: Mutex<LinkedList<Scope>> = Mutex::new(LinkedList::<Scope>::new());
+    static ref FUNCTION_TABLE: Mutex<Map<String, Vec<Token>>> = Mutex::new(Map::<String, Vec<Token>>::new());
+}
 
 #[derive(Clone, Debug)]
 pub enum SymbolType {
@@ -33,6 +41,7 @@ pub struct ArraySymbolArgs {
     pub array: Vec<SymbolType>,
 }
 
+#[derive(Clone, Debug)]
 pub struct Scope {
     pub symbols: HashMap<String, SymbolType>,
 }
@@ -44,94 +53,27 @@ impl Scope {
         }
     }
 
-    pub fn add_number(&mut self, name: Token, value: Token) {
-        let (n, v) = match (name.tok_type, value.tok_type) {
-            (TokenType::Literal, TokenType::Literal) => (
-                name.tok_value.unwrap().s_val.unwrap(),
-                value.tok_value.unwrap().s_val.unwrap(),
-            ),
-            (_, _) => panic!("keyword cannot be used as a variable name"),
-        };
+    pub fn add(&mut self, name: String, symbol: SymbolType) {
+        self.symbols.insert(name, symbol);
+    }
+}
 
-        if self.symbols.contains_key(&n) {
-            panic!("variable name {} is already in use", n);
-        }
-
-        self.symbols.insert(n, SymbolType::Number(v));
+impl CALL_STACK {
+    pub fn push(&self, scope: Scope) {
+        CALL_STACK.lock().unwrap().push_back(scope);
     }
 
-    pub fn add_string(&mut self, name: Token, value: Token) {
-        let (n, v) = match (name.tok_type, value.tok_type) {
-            (TokenType::Literal, TokenType::Literal) => (
-                name.tok_value.unwrap().s_val.unwrap(),
-                value.tok_value.unwrap().s_val.unwrap(),
-            ),
-            (_, _) => panic!("keyword cannot be used as a variable name"),
-        };
-
-        if self.symbols.contains_key(&n) {
-            panic!("variable name {} is already in use", n);
-        }
-
-        self.symbols.insert(n, SymbolType::String(v));
+    pub fn pop(&self) {
+        CALL_STACK.lock().unwrap().pop_back();
     }
 
-    pub fn add_object(&mut self, name: Token, value_pairs: Vec<(Token, Token)>) {
-        let n = match name.tok_type {
-            TokenType::Literal => name.tok_value.unwrap().s_val.unwrap(),
-            _ => panic!("keyword cannot be used as a variable name"),
-        };
-
-        if self.symbols.contains_key(&n) {
-            panic!("variable name {} is already in use", n);
+    pub fn add_symbol(&self, name: String, symbol: SymbolType) {
+        let mut stack = CALL_STACK.lock().unwrap();
+        if stack.is_empty() {
+            stack.push_back(Scope::new());
         }
-
-        let mut vars: HashMap<String, SymbolType> = HashMap::new();
-        let mut methods: HashMap<String, FunctionSymbolArgs> = HashMap::new();
-
-        for (k, v) in value_pairs {
-            match k.tok_type {
-                TokenType::Literal => {
-                    let key = k.tok_value.unwrap().s_val.unwrap();
-                    match v.tok_type {
-                        TokenType::Literal => {
-                            let val = v.tok_value.unwrap().s_val.unwrap();
-                            vars.insert(key, SymbolType::String(val));
-                        }
-                        _ => panic!("invalid value type for object"),
-                    }
-                }
-                _ => panic!("invalid key type for object"),
-            }
-        }
-
-        self.symbols
-            .insert(n, SymbolType::Object(ObjectSymbolArgs { vars, methods }));
-    }
-
-    pub fn add_array(&mut self, name: Token, values: Vec<Token>) {
-        let n = match name.tok_type {
-            TokenType::Literal => name.tok_value.unwrap().s_val.unwrap(),
-            _ => panic!("keyword cannot be used as a variable name"),
-        };
-
-        if self.symbols.contains_key(&n) {
-            panic!("variable name {} is already in use", n);
-        }
-
-        let mut array: Vec<SymbolType> = Vec::new();
-
-        for v in values {
-            match v.tok_type {
-                TokenType::Literal => {
-                    let val = v.tok_value.unwrap().s_val.unwrap();
-                    array.push(SymbolType::String(val));
-                }
-                _ => panic!("invalid value type for array"),
-            }
-        }
-
-        self.symbols
-            .insert(n, SymbolType::Array(ArraySymbolArgs { array }));
+        let mut scope = stack.back_mut().unwrap();
+        scope.add(name, symbol);
+        println!("{:?}", scope);
     }
 }
