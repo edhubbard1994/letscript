@@ -22,6 +22,7 @@ pub enum SymbolType {
     Object(ObjectSymbolArgs),
     Array(ArraySymbolArgs),
     Function(FunctionSymbolArgs),
+    Pointer(String),
 }
 
 #[derive(Clone, Debug)]
@@ -75,5 +76,15 @@ impl CALL_STACK {
         let mut scope = stack.back_mut().unwrap();
         scope.add(name, symbol);
         println!("{:?}", scope);
+    }
+
+    pub fn lookup_symbol(&self, name: String) -> Option<SymbolType> {
+        let stack = CALL_STACK.lock().unwrap();
+        for scope in stack.iter().rev() {
+            if let Some(symbol) = scope.symbols.get(&name) {
+                return Some(symbol.clone());
+            }
+        }
+        None
     }
 }

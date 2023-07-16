@@ -59,10 +59,11 @@ fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
             if expr[expr.len() - 1].tok_type == TokenType::NewLine {
                 expr.pop();
             }
-            let non_unary = resolve_unary_operators(expr.clone().to_vec());
+            let resolved_vars = resolve_symbols(expr.clone().to_vec());
+            println!("{:?}", resolved_vars);
+            let non_unary = resolve_unary_operators(resolved_vars.clone().to_vec());
             let postfix = infix_to_postfix(non_unary.clone());
             let evaluated = eval_expression(&mut postfix.clone());
-            println!("{:?}", evaluated);
             return ast::SymbolType::Number(evaluated.tok_value.unwrap().s_val.unwrap());
         }
         //TokenType::Quote => {}
@@ -89,6 +90,39 @@ fn parse_array(tokens: Vec<Token>) {
         }
         token = itr.next();
     }
+}
+
+pub fn resolve_symbols(tokens: Vec<Token>) -> Vec<Token> {
+    let mut new_tokens = Vec::<Token>::new();
+    for token in tokens {
+        match token.clone().tok_type {
+            TokenType::Literal => {
+                let symbol =
+                    ast::CALL_STACK.lookup_symbol(token.clone().tok_value.unwrap().s_val.unwrap());
+                match symbol.clone() {
+                    Some(sym) => {
+                        new_tokens.push(Token {
+                            tok_type: TokenType::Literal,
+                            tok_value: Some(TokenValue {
+                                s_val: match symbol.clone().unwrap() {
+                                    ast::SymbolType::Number(s) => Some(s),
+                                    ast::SymbolType::String(s) => Some(s),
+                                    _ => panic!("invalid symbol type"),
+                                },
+                            }),
+                        });
+                    }
+                    None => {
+                        new_tokens.push(token.clone());
+                    }
+                }
+            }
+            _ => {
+                new_tokens.push(token);
+            }
+        }
+    }
+    return new_tokens;
 }
 
 pub fn collect_expression_tokens<'a>(
