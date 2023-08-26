@@ -119,9 +119,22 @@ fn parse_array(tokens: Vec<Token>) -> ast::SymbolType {
                 symbols.push(parse_array(nested));
             }
             TokenType::CloseBracket => break,
-            TokenType::Literal => symbols.push(ast::SymbolType::Number(
-                tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
-            )),
+            TokenType::Literal => {
+                let existing_var = ast::CALL_STACK
+                    .lookup_symbol(tokens[i].clone().tok_value.unwrap().s_val.unwrap());
+                if existing_var.is_some() {
+                    symbols.push(match existing_var.unwrap() {
+                        _ => ast::SymbolType::Pointer(
+                            tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
+                        ),
+                    });
+                    continue;
+                }
+
+                symbols.push(ast::SymbolType::Number(
+                    tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
+                ));
+            }
             TokenType::Comma => continue,
             TokenType::Quote => {
                 symbols.push(parse_string(tokens[i..].to_vec()));
