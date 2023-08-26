@@ -126,7 +126,7 @@ pub fn tokenize(program_string: &mut String) -> Vec<Token> {
             }
 
             ']' => {
-                token = generate_simple_token(TokenType::CloseBracet);
+                token = generate_simple_token(TokenType::CloseBracket);
                 current_char = text_itr.next();
             }
 
@@ -269,7 +269,7 @@ fn generate_operator_regex_token(
     tok_type: TokenType,
 ) -> (Option<Token>, char) {
     let mut acc = String::from("");
-    while *current != ' ' && current.is_ascii_punctuation(){
+    while *current != ' ' && current.is_ascii_punctuation() {
         acc.push(current.clone());
         //println!("loop char = {}", current.clone());
         *current = stream.next().unwrap();
@@ -318,7 +318,6 @@ pub fn test_regex() {
     assert_eq!(matches!(token.unwrap().tok_type, TokenType::Assign), true);
 }
 
-
 #[test]
 pub fn test_simple() {
     let token = generate_simple_token(TokenType::Equals);
@@ -355,7 +354,6 @@ pub fn test_tokenizer_assignment() {
     assert_eq!(tokens.len(), 5);
 }
 
-
 #[test]
 pub fn test_tokenizer_not_eq() {
     let mut input = String::from("  is_not_running = false \n");
@@ -367,7 +365,6 @@ pub fn test_tokenizer_not_eq() {
 
     assert_eq!(tokens.len(), 4);
 }
-
 
 #[test]
 pub fn test_tokenizer_combinator() {
@@ -403,7 +400,7 @@ pub fn test_tokenizer_bracket() {
     let tokens = tokenize(&mut input);
     tokens.iter().for_each(|t| println!("{:?}", t.tok_type));
     assert_eq!(matches!(tokens[0].tok_type, TokenType::OpenBracket), true);
-    assert_eq!(matches!(tokens[4].tok_type, TokenType::CloseBracet), true);
+    assert_eq!(matches!(tokens[4].tok_type, TokenType::CloseBracket), true);
     assert_eq!(matches!(tokens[5].tok_type, TokenType::OpenBrace), true);
     assert_eq!(matches!(tokens[13].tok_type, TokenType::CloseBrace), true);
     assert_eq!(matches!(tokens[14].tok_type, TokenType::OpenParen), true);

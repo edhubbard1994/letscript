@@ -20,7 +20,7 @@ pub enum SymbolType {
     Number(String),
     String(String),
     Object(ObjectSymbolArgs),
-    Array(ArraySymbolArgs),
+    Array(Vec<SymbolType>),
     Function(FunctionSymbolArgs),
     Pointer(String),
 }

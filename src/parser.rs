@@ -31,7 +31,7 @@ pub fn parse(tokens: &mut Vec<Token>) {
         TokenType::OpenBrace => todo!(),
         TokenType::CloseBrace => todo!(),
         TokenType::OpenBracket => todo!(),
-        TokenType::CloseBracet => todo!(),
+        TokenType::CloseBracket => todo!(),
         TokenType::OpenParen => todo!(),
         TokenType::CloseParen => todo!(),
         TokenType::NewLine => todo!(),
@@ -66,30 +66,72 @@ fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
             let evaluated = eval_expression(&mut postfix.clone());
             return ast::SymbolType::Number(evaluated.tok_value.unwrap().s_val.unwrap());
         }
-        //TokenType::Quote => {}
+        TokenType::Quote => {
+            if expr[expr.len() - 1].tok_type == TokenType::NewLine {
+                expr.pop();
+            }
+            return parse_string(expr.clone().to_vec());
+        }
+        TokenType::OpenBracket => {
+            return parse_array(expr.clone().to_vec());
+        }
         _ => panic!("invalid expression syntax"),
     }
 }
 
-fn parse_array(tokens: Vec<Token>) {
+fn parse_string(tokens: Vec<Token>) -> ast::SymbolType {
     if tokens.len() < 3 {
-        panic!("invalid array syntax");
+        panic!("invalid string syntax");
     }
     let mut itr = tokens.iter();
     let mut token = itr.next();
-    if token.unwrap().tok_type != TokenType::OpenBracket {
-        panic!("invalid array syntax");
+    if token.unwrap().tok_type != TokenType::Quote {
+        panic!("invalid string syntax");
     }
     token = itr.next();
+    let mut value = "".to_string();
     while token.is_some() {
-        match token.unwrap().tok_type {
-            TokenType::Literal => {}
-            TokenType::Comma => {}
-            TokenType::CloseBracet => break,
-            _ => panic!("invalid array syntax"),
+        match token.clone().unwrap().tok_type {
+            TokenType::Literal => {
+                value = token
+                    .unwrap()
+                    .clone()
+                    .tok_value
+                    .unwrap()
+                    .s_val
+                    .unwrap()
+                    .clone();
+            }
+            TokenType::Quote => break,
+            _ => panic!("invalid string syntax"),
         }
         token = itr.next();
     }
+    ast::SymbolType::String(value)
+}
+
+fn parse_array(tokens: Vec<Token>) -> ast::SymbolType {
+    let mut symbols = Vec::<ast::SymbolType>::new();
+    for mut i in 1..tokens.len() - 1 {
+        match tokens[i].tok_type {
+            TokenType::OpenBracket => {
+                let nested = tokens[i..].to_vec();
+                symbols.push(parse_array(nested));
+            }
+            TokenType::CloseBracket => break,
+            TokenType::Literal => symbols.push(ast::SymbolType::Number(
+                tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
+            )),
+            TokenType::Comma => continue,
+            TokenType::Quote => {
+                symbols.push(parse_string(tokens[i..].to_vec()));
+                i += 2;
+            }
+
+            _ => panic!("invalid array syntax"),
+        }
+    }
+    return ast::SymbolType::Array(symbols);
 }
 
 pub fn resolve_symbols(tokens: Vec<Token>) -> Vec<Token> {
@@ -279,7 +321,7 @@ pub fn expr_type_factory(mut itr: vec::IntoIter<Token>) -> Vec<Token> {
                 break;
             }
             TokenType::OpenBracket => {}
-            TokenType::CloseBracet => {}
+            TokenType::CloseBracket => {}
             TokenType::Literal
             | TokenType::And
             | TokenType::Or

@@ -34,7 +34,7 @@ pub enum TokenType {
     OpenBrace,
     CloseBrace,
     OpenBracket,
-    CloseBracet,
+    CloseBracket,
     OpenParen,
     CloseParen,
     NewLine,
