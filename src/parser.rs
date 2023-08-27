@@ -85,12 +85,15 @@ fn parse_string(tokens: Vec<Token>) -> ast::SymbolType {
     }
     let mut itr = tokens.iter();
     let mut token = itr.next();
+    println!("{:?}", tokens);
     if token.unwrap().tok_type != TokenType::Quote {
-        panic!("invalid string syntax");
+        panic!("invalid string syntax 2");
     }
+    println!("before loop");
     token = itr.next();
     let mut value = "".to_string();
     while token.is_some() {
+        println!("parse string: {:?}", token.clone().unwrap().tok_type);
         match token.clone().unwrap().tok_type {
             TokenType::Literal => {
                 value = token
@@ -103,10 +106,11 @@ fn parse_string(tokens: Vec<Token>) -> ast::SymbolType {
                     .clone();
             }
             TokenType::Quote => break,
-            _ => panic!("invalid string syntax"),
+            _ => panic!("invalid string syntax 3"),
         }
         token = itr.next();
     }
+    println!("after loop");
     ast::SymbolType::String(value)
 }
 
@@ -137,8 +141,10 @@ fn parse_array(tokens: Vec<Token>) -> ast::SymbolType {
             }
             TokenType::Comma => continue,
             TokenType::Quote => {
-                symbols.push(parse_string(tokens[i..].to_vec()));
-                i += 2;
+                println!("string: {:?}", tokens[i..][0]);
+                let str_slice = tokens[i..i + 3].to_vec();
+                symbols.push(parse_string(str_slice));
+                i += 3;
             }
 
             _ => panic!("invalid array syntax"),
