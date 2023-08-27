@@ -116,7 +116,9 @@ fn parse_string(tokens: Vec<Token>) -> ast::SymbolType {
 
 fn parse_array(tokens: Vec<Token>) -> ast::SymbolType {
     let mut symbols = Vec::<ast::SymbolType>::new();
-    for mut i in 1..tokens.len() - 1 {
+    let mut i = 1;
+
+    while i < tokens.len() - 1 {
         match tokens[i].tok_type {
             TokenType::OpenBracket => {
                 let nested = tokens[i..].to_vec();
@@ -132,25 +134,26 @@ fn parse_array(tokens: Vec<Token>) -> ast::SymbolType {
                             tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
                         ),
                     });
-                    continue;
+                } else {
+                    symbols.push(ast::SymbolType::Number(
+                        tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
+                    ));
                 }
-
-                symbols.push(ast::SymbolType::Number(
-                    tokens[i].clone().tok_value.unwrap().s_val.unwrap(),
-                ));
             }
-            TokenType::Comma => continue,
+            TokenType::Comma => {}
             TokenType::Quote => {
-                println!("string: {:?}", tokens[i..][0]);
+                println!("string: {:?}", tokens[i]);
                 let str_slice = tokens[i..i + 3].to_vec();
                 symbols.push(parse_string(str_slice));
-                i += 3;
+                i += 2; // added 2 instead of 3 because at the end of the loop we'll also increment by 1.
             }
-
             _ => panic!("invalid array syntax"),
         }
+
+        i += 1; // Regular increment.
     }
-    return ast::SymbolType::Array(symbols);
+
+    ast::SymbolType::Array(symbols)
 }
 
 pub fn resolve_symbols(tokens: Vec<Token>) -> Vec<Token> {
