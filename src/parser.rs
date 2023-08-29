@@ -9,6 +9,8 @@ use crate::token::TokenValue;
 
 use crate::ast;
 
+use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::slice::Iter;
 use std::vec;
@@ -52,6 +54,15 @@ pub fn parse_assignment(tokens: &mut Vec<Token>) {
     }
 }
 
+pub fn parse_block(tokens: Vec<Token>) -> ast::SymbolType {
+    let mut block = Vec::<Token>::new();
+    let mut token = tokens.iter();
+    let mut current = token.next();
+    //while token.is_some() {}
+
+    return ast::SymbolType::Number("0".to_string());
+}
+
 fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
     match expr[0].tok_type {
         //TokenType::OpenBracket => {}
@@ -74,6 +85,9 @@ fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
         }
         TokenType::OpenBracket => {
             return parse_array(expr.clone().to_vec());
+        }
+        TokenType::OpenBrace => {
+            return parse_object(expr.clone().to_vec());
         }
         _ => panic!("invalid expression syntax"),
     }
@@ -154,6 +168,46 @@ fn parse_array(tokens: Vec<Token>) -> ast::SymbolType {
     }
 
     ast::SymbolType::Array(symbols)
+}
+
+fn parse_object(tokens: Vec<Token>) -> ast::SymbolType {
+    if tokens.len() < 5 {
+        panic!("invalid object syntax");
+    }
+    let mut token_iter = tokens.iter().peekable();
+    let mut token = token_iter.next().unwrap();
+    let mut object_map = BTreeMap::<ast::SymbolType, ast::SymbolType>::new();
+    if token.tok_type != TokenType::OpenBrace {
+        panic!("Objects must start with an open brace");
+    }
+    //token = token_iter.next().unwrap();
+    while token.tok_type != TokenType::CloseBrace || token.tok_type != TokenType::NewLine {
+        let key_iter = token_iter
+            .by_ref()
+            .take_while(|t| t.tok_type != TokenType::Colon)
+            .map(|t| t.clone());
+
+        let mut key = key_iter.collect::<Vec<Token>>();
+
+        let key_symbol = parse_expression(&mut key);
+        token = token_iter.peek().unwrap();
+        println!("token after key: {:?}", token.tok_type);
+        // if token.tok_type != TokenType::Colon {
+        //     panic!("Objects must have a colon after the key");
+        // }
+        let mut value = token_iter
+            .by_ref()
+            .take_while(|t| !(vec![TokenType::Comma, TokenType::CloseBrace].contains(&t.tok_type)))
+            .cloned()
+            .collect::<Vec<Token>>();
+        let value_symbol = parse_expression(&mut value);
+        token = token_iter.peek().unwrap();
+        println!("token after value: {:?}", token.tok_type);
+
+        object_map.insert(key_symbol, value_symbol);
+    }
+
+    return ast::SymbolType::Object(object_map);
 }
 
 pub fn resolve_symbols(tokens: Vec<Token>) -> Vec<Token> {

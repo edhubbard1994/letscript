@@ -2,6 +2,7 @@ use crate::token::Token;
 use crate::token::TokenType;
 use lazy_static::lazy_static;
 use phf::Map;
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::ops::DerefMut;
@@ -15,13 +16,13 @@ lazy_static! {
     static ref FUNCTION_TABLE: Mutex<Map<String, Vec<Token>>> = Mutex::new(Map::<String, Vec<Token>>::new());
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum SymbolType {
     Number(String),
     String(String),
-    Object(ObjectSymbolArgs),
+    Object(BTreeMap<SymbolType, SymbolType>),
     Array(Vec<SymbolType>),
-    Function(FunctionSymbolArgs),
+    Function(String),
     Pointer(String),
 }
 
