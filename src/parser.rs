@@ -93,6 +93,20 @@ fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
     }
 }
 
+fn parse_string_iter<'a>(tokens: &'a mut Iter<'a, Token>) -> (ast::SymbolType, & mut Iter< Token>) {
+    let t1 = tokens.next().unwrap();
+    let t2 = tokens.next().unwrap();
+    let t3 = tokens.next().unwrap();
+    let val = match (t1.tok_type, t2.tok_type, t3.tok_type) {
+        (TokenType::Quote, TokenType::Literal, TokenType::Quote) => {
+            ast::SymbolType::String(t2.clone().tok_value.unwrap().s_val.unwrap())
+        }
+        _ => {panic!("not a valid string")}
+    };
+    return (val,tokens.into_iter())
+    
+}
+
 fn parse_string(tokens: Vec<Token>) -> ast::SymbolType {
     if tokens.len() < 3 {
         panic!("invalid string syntax");
