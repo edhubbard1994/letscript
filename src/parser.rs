@@ -3,6 +3,7 @@
 use crate::expr::operate;
 use crate::expr::operate_unary;
 
+use crate::token;
 use crate::token::Token;
 use crate::token::TokenType;
 use crate::token::TokenValue;
@@ -12,6 +13,7 @@ use crate::ast;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::LinkedList;
+use std::iter::Peekable;
 use std::slice::Iter;
 use std::vec;
 
@@ -20,7 +22,7 @@ pub fn parse(tokens: &mut Vec<Token>) {
     let mut token = itr.next();
 
     match token.unwrap().tok_type {
-        TokenType::Assign => parse_assignment(tokens),
+        TokenType::Assign => parse_assignment_iter(Box::new(itr.peekable())),
         TokenType::Bool => todo!(),
         TokenType::Function => todo!(),
         TokenType::Quote => todo!(),
@@ -63,6 +65,22 @@ pub fn parse_block(tokens: Vec<Token>) -> ast::SymbolType {
     return ast::SymbolType::Number("0".to_string());
 }
 
+fn parse_assignment_iter<'a>(mut tokens:  Box<Peekable<Iter<'a, Token>>>) {
+    let mut tok = tokens.next().unwrap();
+    if tok.tok_type != TokenType::Literal {
+        panic!("invalid assignment syntax. must be in form 'var <name> is <value>");
+    }
+    let name = tok.clone().tok_value.unwrap().s_val.unwrap();
+    tok = tokens.next().unwrap();
+    if tok.tok_type != TokenType::Is {
+        panic!("invalid assignment syntax. must be in form 'var <name> is <value>")
+    }
+    let(value, _) = parse_expression_iter(tokens); 
+    ast::CALL_STACK.add_symbol(name, value);
+            println!("{:?}", ast::CALL_STACK)
+    
+}
+
 fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
     match expr[0].tok_type {
         //TokenType::OpenBracket => {}
@@ -93,18 +111,124 @@ fn parse_expression(expr: &mut Vec<Token>) -> ast::SymbolType {
     }
 }
 
-fn parse_string_iter<'a>(tokens: &'a mut Iter<'a, Token>) -> (ast::SymbolType, & mut Iter< Token>) {
+fn parse_expression_iter<'a>(mut tokens:  Box<Peekable<Iter<'a, Token>>>) -> (ast::SymbolType, Box<Peekable<Iter<'a, Token>>>){
+
+    let mut tok = tokens.peek_mut();
+    let mut val: ast::SymbolType;
+    let mut toks:  Box<Peekable<Iter<'a, Token>>>;
+    match tok.unwrap().tok_type {
+        TokenType::Literal | TokenType::Minus | TokenType::Not => {
+            (val,toks) = parse_logical_iter(tokens);
+        }
+        TokenType::Quote => {
+            (val,toks) = parse_string_iter(tokens);
+        }
+        TokenType::OpenBracket => {
+            (val,toks) = parse_array_iter(tokens);
+        }
+        TokenType::OpenBrace => {
+          todo!("implement");
+        }
+        _ => panic!("invalid expression syntax"),
+    };
+    return (val, toks)
+}
+
+pub fn parse_logical_iter<'a>(mut tokens:  Box<Peekable<Iter<'a, Token>>>) -> (ast::SymbolType, Box<Peekable<Iter<'a, Token>>>){
+
+    let operators = vec![
+        TokenType::Literal,
+        TokenType::OpenParen,
+        TokenType::CloseParen,
+        TokenType::Plus,
+        TokenType::Minus,
+        TokenType::Bool,
+        TokenType::Mult,
+        TokenType::Mod,
+        TokenType::Div,
+        TokenType::And,
+        TokenType::Or,
+        TokenType::Not,
+        TokenType::Equals,
+        TokenType::NotEqual,
+        TokenType::GreaterThan,
+        TokenType::LessThan,
+        TokenType::Gte,
+        TokenType::Lte,
+        TokenType::In];
+    let mut tok = tokens.next();
+    let mut vc = Vec::<Token>::new();
+    while tok.is_some() {
+        let i =  tok.unwrap();
+        if operators.contains(&i.tok_type) {
+            vc.push(i.clone())
+        }
+        tok = tokens.next();
+    }
+    let resolved_vars = resolve_symbols(vc);
+    println!("{:?}", resolved_vars);
+    let non_unary = resolve_unary_operators(resolved_vars.clone().to_vec());
+    let postfix = infix_to_postfix(non_unary.clone());
+    let evaluated = eval_expression(&mut postfix.clone());
+    return (ast::SymbolType::Number(evaluated.tok_value.unwrap().s_val.unwrap()), tokens);
+
+}
+
+fn parse_string_iter<'a>(mut tokens: Box<Peekable<Iter<'a, Token>>>) -> (ast::SymbolType,Box<Peekable<Iter<'a, Token>>>) {
     let t1 = tokens.next().unwrap();
     let t2 = tokens.next().unwrap();
-    let t3 = tokens.next().unwrap();
+    let t3 = tokens.next().unwrap(); 
+  
     let val = match (t1.tok_type, t2.tok_type, t3.tok_type) {
-        (TokenType::Quote, TokenType::Literal, TokenType::Quote) => {
+        ( TokenType::Quote, TokenType::Literal, TokenType::Quote) => {
             ast::SymbolType::String(t2.clone().tok_value.unwrap().s_val.unwrap())
         }
         _ => {panic!("not a valid string")}
-    };
-    return (val,tokens.into_iter())
-    
+        };
+    return (val, tokens)
+}
+
+fn parse_array_iter<'a>(mut tokens:Box<Peekable<Iter<'a, Token>>>) -> (ast::SymbolType,  Box<Peekable<Iter<'a, Token>>>) {
+    let mut symbols = Vec::<ast::SymbolType>::new();
+    let mut tok = tokens.next();
+
+    while tok.is_some() {
+        let mut i = tok.unwrap();
+        match i.tok_type {
+            TokenType::OpenBracket => {
+                let mut arr;
+               ( arr ,_) = parse_array_iter(tokens.clone());
+                symbols.push(arr);
+            }
+            TokenType::CloseBracket => break,
+            TokenType::Literal => {
+                let existing_var = ast::CALL_STACK
+                    .lookup_symbol(i.clone().tok_value.unwrap().s_val.unwrap());
+                if existing_var.is_some() {
+                    symbols.push(match existing_var.unwrap() {
+                        _ => ast::SymbolType::Pointer(
+                            i.clone().tok_value.unwrap().s_val.unwrap(),
+                        ),
+                    });
+                } else {
+                    symbols.push(ast::SymbolType::Number(
+                        i.clone().tok_value.unwrap().s_val.unwrap(),
+                    ));
+                }
+            }
+            TokenType::Comma => {}
+            TokenType::Quote => {
+                println!("string: {:?}", i);
+                let mut str;
+                (str,_) = parse_string_iter(tokens.clone());
+                symbols.push(str);
+            }
+            _ => panic!("invalid array syntax"),
+        }
+
+        tok = tokens.next(); // Regular increment.
+    }
+    return(ast::SymbolType::Array(symbols), tokens);
 }
 
 fn parse_string(tokens: Vec<Token>) -> ast::SymbolType {

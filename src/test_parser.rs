@@ -1,6 +1,7 @@
 use crate::parser::collect_expression_tokens;
 use crate::parser::eval_expression;
 use crate::parser::infix_to_postfix;
+use crate::parser::parse_logical_iter;
 use crate::parser::resolve_unary_operators;
 use crate::token::TokenType;
 use crate::tokenizer::tokenize;
@@ -237,4 +238,16 @@ pub fn test_eval_postfix_8() {
     });
 
     assert_eq!(evaled.tok_value.unwrap().s_val.unwrap(), "true");
+}
+
+
+#[test]
+pub fn test_logical_expr() {
+    let mut input = String::from("((1 +4)  = 5) and 2 = 2");
+    let binding = tokenize(&mut input);
+    let mut tokens = binding.iter();
+    let mut x;
+    let mut y;
+    (x, y) = parse_logical_iter(Box::new(tokens.peekable()));
+    assert_eq!(y.next().is_none(), true);
 }

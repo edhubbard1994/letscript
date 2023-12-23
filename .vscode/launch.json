@@ -2,6 +2,18 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "inputs": [
+        {
+          "id": "test-binary-name",
+          "type": "command",
+          "command": "extension.commandvariable.transform",
+          "args": {
+            "text": "${relativeFileDirname}",
+            "find": "interp-[0-9a-fA-F]{16}",
+            "replace": "$1",
+          }
+        }
+      ],
     "version": "0.2.0",
     "configurations": [
          {
@@ -9,6 +21,14 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceRoot}/target/debug/interp",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug tests",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/deps/interp-e3025651630599c7",
             "args": [],
             "cwd": "${workspaceRoot}",
         }
